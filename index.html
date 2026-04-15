@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Truck Condition Logger</title>
+  
+  <!-- Makes it act like a native app on iOS -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Truck Inspect">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  
+  <!-- Your App Icon (served from your secure WP site) -->
+  <link rel="apple-touch-icon" sizes="180x180" href="https://harrodco.com/wp-content/uploads/2026/04/80-1.png">
+  
+  <style>
+    /* Removes all margins and makes the iframe fill the entire screen */
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #f0f2f5;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Replace the src URL below with your actual Google Apps Script Web App URL -->
+  <iframe src="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec" allow="camera"></iframe>
+
+</body>
+</html>
