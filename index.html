@@ -3,18 +3,17 @@
 <head>
   <meta charset="utf-8">
   <title>Truck Condition Logger</title>
-  
-  <!-- Makes it act like a native app on iOS -->
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Harrod Truck Inspect">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  
-  <!-- Your App Icon (served from your secure WP site) -->
+  <meta name="theme-color" content="#f0f2f5">
+
+  <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" sizes="180x180" href="https://harrodco.com/wp-content/uploads/2026/04/80-1.png">
-  
+
   <style>
-    /* Removes all margins and makes the iframe fill the entire screen */
     body, html {
       margin: 0;
       padding: 0;
@@ -29,12 +28,82 @@
       border: none;
       display: block;
     }
+    #install-banner {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 40px);
+      max-width: 400px;
+      background: #333;
+      color: #fff;
+      padding: 14px 18px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      z-index: 9999;
+      text-align: center;
+      font-family: sans-serif;
+      font-size: 15px;
+    }
+    #install-banner button {
+      display: block;
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      background: #4285f4;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
 
-  <!-- Replace the src URL below with your actual Google Apps Script Web App URL -->
   <iframe src="https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec" allow="camera"></iframe>
 
+  <div id="install-banner">
+    <span id="install-msg">Add this app to your home screen.</span>
+    <button id="install-btn">Add to Home Screen</button>
+  </div>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+
+    const banner = document.getElementById('install-banner');
+    const btn    = document.getElementById('install-btn');
+    const msg    = document.getElementById('install-msg');
+
+    // Android / Chrome
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      banner.style.display = 'block';
+    });
+
+    btn.addEventListener('click', async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') banner.style.display = 'none';
+        deferredPrompt = null;
+      }
+    });
+
+    // iOS Safari
+    const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = navigator.standalone === true;
+    if (isIos && !isStandalone) {
+      banner.style.display = 'block';
+      msg.innerHTML = "Tap the <strong>Share</strong> icon, then <strong>Add to Home Screen</strong>.";
+      btn.style.display = 'none';
+      setTimeout(() => { banner.style.display = 'none'; }, 12000);
+    }
+  </script>
 </body>
 </html>

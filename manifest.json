@@ -1,0 +1,20 @@
+{
+  "name": "Harrod Truck Inspect",
+  "short_name": "Truck Inspect",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f0f2f5",
+  "theme_color": "#f0f2f5",
+  "icons": [
+    {
+      "src": "https://harrodco.com/wp-content/uploads/2026/04/80-1.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://harrodco.com/wp-content/uploads/2026/04/80-1.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ]
+}
