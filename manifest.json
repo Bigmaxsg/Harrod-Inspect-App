@@ -3,18 +3,20 @@
   "short_name": "Harrod Trk Insp",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f0f2f5",
-  "theme_color": "#f0f2f5",
+  "background_color": "#1c2e4a",
+  "theme_color": "#1c2e4a",
   "icons": [
     {
       "src": "https://harrodco.com/wp-content/uploads/2026/04/80-1.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any"
     },
     {
       "src": "https://harrodco.com/wp-content/uploads/2026/04/80-1.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any"
     }
   ]
 }
