@@ -1,6 +1,6 @@
 {
   "name": "Harrod Truck Inspect",
-  "short_name": "Harrod Insp",
+  "short_name": "Harrod Trk Insp",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1c2e4a",
