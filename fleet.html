@@ -7,9 +7,9 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #0e1a2e; color: #f0f4f8; min-height: 100vh; }
-    #top-bar { background: linear-gradient(135deg, #1c2e4a 0%, #0e1a2e 100%); border-bottom: 2px solid #2a4a7f; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+    #top-bar { background: linear-gradient(135deg, #1c2e4a 0%, #0e1a2e 100%); border-bottom: 2px solid #2a4a7f; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
     #top-bar-left { display: flex; align-items: center; gap: 12px; }
-    #top-bar h1 { font-size: 1.1rem; font-weight: 700; color: #fff; letter-spacing: 0.02em; }
+    #top-bar h1 { font-size: 1.1rem; font-weight: 700; color: #fff; }
     #top-bar h1 span { color: #4fc3f7; }
     .back-btn { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1); color: #cdd5e0; text-decoration: none; border: 1px solid rgba(255,255,255,0.2); border-radius: 7px; padding: 5px 12px; font-size: 0.8rem; transition: background 0.2s; }
     .back-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
@@ -17,7 +17,7 @@
     #refresh-info { font-size: 0.75rem; color: #8fa8c8; text-align: right; }
     #last-updated { display: block; }
     #next-refresh { display: block; color: #6b90b8; font-size: 0.68rem; }
-    #refresh-btn { background: #1565c0; color: #fff; border: none; border-radius: 7px; padding: 6px 14px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 5px; }
+    #refresh-btn { background: #1565c0; color: #fff; border: none; border-radius: 7px; padding: 6px 14px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; }
     #refresh-btn:hover { background: #1976d2; }
     #refresh-btn.spinning svg { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
@@ -32,17 +32,19 @@
     #error-msg { display: none; background: #3e1010; border: 1px solid #c62828; color: #ef9a9a; border-radius: 10px; padding: 14px 20px; margin: 20px; font-size: 0.88rem; }
     .location-pane { display: none; padding: 12px 16px; }
     .location-pane.active { display: block; }
-    .type-filter-bar { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
-    .type-filter-bar .filter-label { font-size: 0.73rem; font-weight: 600; color: #6b90b8; margin-right: 2px; white-space: nowrap; }
-    .type-btn { padding: 4px 12px; border-radius: 16px; font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.07); color: #9ac3e8; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .type-filter-bar { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+    .filter-label { font-size: 0.73rem; font-weight: 600; color: #6b90b8; margin-right: 2px; white-space: nowrap; }
+    .type-btn { padding: 4px 12px; border-radius: 16px; font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.07); color: #9ac3e8; cursor: pointer; transition: all 0.15s; }
     .type-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
-    .type-btn.active { background: #1565c0; border-color: #1976d2; color: #fff; box-shadow: 0 0 8px rgba(21,101,192,0.4); }
+    .type-btn.active { background: #1565c0; border-color: #1976d2; color: #fff; }
     .summary-bar { display: flex; gap: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 14px; margin-bottom: 10px; flex-wrap: wrap; }
     .summary-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; }
     .summary-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .sections-wrap { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: start; }
-    @media (max-width: 900px) { .sections-wrap { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 600px) { .sections-wrap { grid-template-columns: 1fr; } }
+    .sections-wrap { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
+    .section-block { min-width: 0; display: flex; flex-direction: column; }
+    .section-inuse  { flex: 1 1 0; }
+    .section-idle   { flex: 1 1 0; }
+    .section-redtag { flex: 0 0 338px; width: 338px; }
     .section-header { display: flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 8px 8px 0 0; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; }
     .section-header.green  { background: #1b3d1e; color: #a5d6a7; border-bottom: 2px solid #2e7d32; }
     .section-header.yellow { background: #3d3000; color: #fff176; border-bottom: 2px solid #f9a825; }
@@ -52,44 +54,100 @@
     .col-dot.yellow { background: #ffee58; box-shadow: 0 0 5px #ffee58; }
     .col-dot.red    { background: #ef5350; box-shadow: 0 0 5px #ef5350; }
     .col-count { margin-left: auto; font-size: 0.72rem; opacity: 0.7; }
-    .card-grid { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-top: none; border-radius: 0 0 8px 8px; padding: 8px; min-height: 60px; display: flex; flex-wrap: wrap; gap: 7px; align-content: flex-start; }
-    .col-empty { width: 100%; text-align: center; padding: 20px 8px; color: #4a6080; font-size: 0.78rem; font-style: italic; }
-    .truck-card { background: #fff; border-radius: 8px; padding: 9px 10px; color: #1a2535; box-shadow: 0 1px 6px rgba(0,0,0,0.22); width: 160px; flex-shrink: 0; display: flex; flex-direction: column; gap: 5px; transition: transform 0.12s, box-shadow 0.12s; border-left: 3px solid #ccc; }
-    .truck-card:hover { transform: translateY(-2px); box-shadow: 0 3px 12px rgba(0,0,0,0.3); }
+    .card-grid { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-top: none; border-radius: 0 0 8px 8px; padding: 8px; min-height: 50px; display: grid; grid-template-columns: repeat(auto-fill, 158px); gap: 7px; align-items: start; }
+    .col-empty { text-align: center; padding: 18px 8px; color: #4a6080; font-size: 0.78rem; font-style: italic; grid-column: 1 / -1; }
+    .truck-card { background: #fff; border-radius: 8px; padding: 9px 10px 8px; color: #1a2535; box-shadow: 0 1px 6px rgba(0,0,0,0.2); border-left: 3px solid #ccc; display: flex; flex-direction: column; gap: 5px; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; width: 158px; }
+    .truck-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.32); }
     .truck-card.inuse  { border-left-color: #43a047; }
     .truck-card.idle   { border-left-color: #f9a825; }
     .truck-card.redtag { border-left-color: #ef5350; }
-    .card-num-row { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
-    .card-num { font-size: 1.15rem; font-weight: 900; color: #0d2a5e; line-height: 1; }
-    .card-type-chip { font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 8px; white-space: nowrap; letter-spacing: 0.02em; background: #e8edf8; color: #3a5a8c; flex-shrink: 0; }
-    .card-make { font-size: 0.68rem; color: #5a6e8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card-status { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 12px; font-size: 0.65rem; font-weight: 700; width: fit-content; }
+    .card-num-row { display: flex; align-items: baseline; justify-content: space-between; gap: 3px; }
+    .card-num { font-size: 1.12rem; font-weight: 900; color: #0d2a5e; line-height: 1; }
+    .card-type-chip { font-size: 0.59rem; font-weight: 700; padding: 2px 5px; border-radius: 7px; background: #e8edf8; color: #3a5a8c; flex-shrink: 0; white-space: nowrap; }
+    .card-make { font-size: 0.67rem; color: #5a6e8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-status { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 12px; font-size: 0.63rem; font-weight: 700; width: fit-content; }
     .card-status .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-    .s-green  { background: #e8f5e9; color: #2e7d32; }
-    .s-green .dot  { background: #43a047; }
-    .s-yellow { background: #fff8e1; color: #e65100; }
-    .s-yellow .dot { background: #f9a825; }
-    .s-red    { background: #ffebee; color: #c62828; }
-    .s-red .dot    { background: #ef5350; }
-    .card-driver-line { font-size: 0.67rem; color: #3a5270; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card-driver-line strong { color: #1a3a5e; }
-    .card-defect-ok   { font-size: 0.63rem; color: #2e7d32; font-weight: 600; }
-    .card-defect-warn { font-size: 0.63rem; color: #e65100; font-weight: 600; }
-    .card-redtag-reason { font-size: 0.63rem; color: #c62828; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card-last-trip { font-size: 0.6rem; color: #7a8fa8; }
-    .card-assign { font-size: 0.58rem; font-weight: 700; padding: 1px 5px; border-radius: 6px; display: inline-block; }
-    .assign-assigned { background: #e3f2fd; color: #1565c0; }
-    .assign-temp     { background: #fff8e1; color: #e65100; }
+    .s-green  { background: #e8f5e9; color: #2e7d32; } .s-green .dot  { background: #43a047; }
+    .s-yellow { background: #fff8e1; color: #e65100; } .s-yellow .dot { background: #f9a825; }
+    .s-red    { background: #ffebee; color: #c62828; } .s-red .dot    { background: #ef5350; }
+    .card-driver-row { display: flex; align-items: center; gap: 6px; border-radius: 5px; padding: 4px 6px; margin: 0 -2px; }
+    .card-driver-row.assigned { background: #e3f2fd; }
+    .card-driver-row.temp     { background: #fff3e0; border: 1px solid #ffcc80; }
+    .driver-mini-avatar { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; color: #fff; }
+    .driver-mini-avatar.assigned-av { background: #1565c0; }
+    .driver-mini-avatar.temp-av     { background: #e65100; }
+    .driver-mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .driver-name-col { flex: 1; min-width: 0; }
+    .driver-name-text { font-size: 0.72rem; font-weight: 700; color: #1a2535; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+    .driver-label-text { font-size: 0.58rem; color: #7a8fa8; line-height: 1.2; }
+    .temp-flag { font-size: 0.56rem; font-weight: 700; color: #e65100; display: block; }
+    .card-defect-ok   { font-size: 0.62rem; color: #2e7d32; font-weight: 600; }
+    .card-defect-warn { font-size: 0.62rem; color: #e65100; font-weight: 600; }
+    .card-redtag-reason { font-size: 0.62rem; color: #c62828; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-last-trip { font-size: 0.59rem; color: #7a8fa8; }
+    .click-hint { font-size: 0.57rem; color: #aab8cc; text-align: right; margin-top: 1px; }
+    #drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; }
+    #drawer-backdrop.open { display: block; }
+    #drawer { position: fixed; top: 0; right: -440px; width: 420px; max-width: 96vw; height: 100vh; background: #0e1a2e; border-left: 2px solid #2a4a7f; z-index: 301; overflow-y: auto; transition: right 0.3s ease; box-shadow: -4px 0 24px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+    #drawer.open { right: 0; }
+    #drawer-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 18px 20px 14px; border-bottom: 1px solid #1e3052; background: #111d2e; flex-shrink: 0; }
+    #drawer-title { font-size: 1.4rem; font-weight: 900; color: #4fc3f7; }
+    #drawer-subtitle { font-size: 0.82rem; color: #8fa8c8; margin-top: 3px; }
+    #drawer-close { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #cdd5e0; border-radius: 6px; padding: 6px 10px; font-size: 1rem; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
+    #drawer-close:hover { background: rgba(255,255,255,0.18); }
+    #drawer-body { padding: 18px 20px; flex: 1; display: flex; flex-direction: column; gap: 16px; }
+    .drawer-section { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; }
+    .drawer-section-title { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4fc3f7; margin-bottom: 10px; }
+    .drawer-row { display: flex; gap: 10px; margin-bottom: 7px; font-size: 0.82rem; }
+    .drawer-row:last-child { margin-bottom: 0; }
+    .drawer-lbl { color: #6b90b8; font-weight: 600; min-width: 90px; flex-shrink: 0; }
+    .drawer-val { color: #e0e8f4; font-weight: 500; }
+    .drawer-val.bold { font-weight: 800; color: #fff; }
+    .drawer-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; }
+    .drawer-status .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .ds-green  { background: #1b3d1e; color: #a5d6a7; } .ds-green .dot  { background: #66bb6a; }
+    .ds-yellow { background: #3d3000; color: #fff176; } .ds-yellow .dot { background: #ffee58; }
+    .ds-red    { background: #3e1010; color: #ef9a9a; } .ds-red .dot    { background: #ef5350; }
+    .drawer-driver-card { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 12px; }
+    .drawer-driver-card.temp-card { background: rgba(230,81,0,0.12); border: 1px solid rgba(230,81,0,0.3); }
+    .drawer-driver-card.assigned-card { background: rgba(21,101,192,0.12); border: 1px solid rgba(21,101,192,0.3); }
+    .drawer-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; color: #fff; }
+    .drawer-avatar.assigned-av { background: #1565c0; }
+    .drawer-avatar.temp-av     { background: #e65100; }
+    .drawer-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .drawer-driver-info { flex: 1; min-width: 0; }
+    .drawer-driver-name { font-size: 0.95rem; font-weight: 800; color: #fff; }
+    .drawer-driver-meta { font-size: 0.72rem; color: #8fa8c8; margin-top: 2px; }
+    .assign-pill { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 0.68rem; font-weight: 700; margin-top: 4px; }
+    .assign-pill.assigned { background: #1565c0; color: #fff; }
+    .assign-pill.temp     { background: #e65100; color: #fff; }
+    .defect-item { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.8rem; color: #cdd5e0; }
+    .defect-item:last-child { border-bottom: none; }
+    .defect-dot { width: 7px; height: 7px; border-radius: 50%; background: #ef5350; flex-shrink: 0; margin-top: 4px; }
+    .defect-fixed-dot { background: #43a047; }
+    .defect-none { color: #4a6080; font-style: italic; font-size: 0.8rem; }
+    .disposition-tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; margin-top: 6px; }
+    .disposition-tag.corrected { background: #1b3d1e; color: #a5d6a7; }
+    .disposition-tag.open { background: #3e1010; color: #ef9a9a; }
+    .redtag-detail-box { background: rgba(239,83,80,0.08); border: 1px solid rgba(239,83,80,0.25); border-radius: 8px; padding: 12px; }
+    .redtag-detail-reason { font-size: 0.88rem; color: #ef9a9a; font-weight: 600; margin-bottom: 8px; }
+    .redtag-detail-meta { font-size: 0.75rem; color: #8fa8c8; }
   </style>
 </head>
 <body>
 <div id="top-bar">
   <div id="top-bar-left">
-    <a href="./index.html" class="back-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Back to App</a>
+    <a href="./index.html" class="back-btn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back to App
+    </a>
     <h1>&#x1F69B; Harrod <span>Fleet Live View</span></h1>
   </div>
   <div id="top-bar-right">
-    <div id="refresh-info"><span id="last-updated">Loading…</span><span id="next-refresh"></span></div>
+    <div id="refresh-info">
+      <span id="last-updated">Loading…</span>
+      <span id="next-refresh"></span>
+    </div>
     <button id="refresh-btn" onclick="manualRefresh()">
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Refresh
@@ -97,25 +155,34 @@
   </div>
 </div>
 <div id="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('Frankfort', this)">&#x1F4CD; Frankfort <span class="tab-count" id="tc-Frankfort">–</span></button>
-  <button class="tab-btn" onclick="switchTab('Lexington', this)">&#x1F4CD; Lexington <span class="tab-count" id="tc-Lexington">–</span></button>
+  <button class="tab-btn active" onclick="switchTab('Frankfort',this)">&#x1F4CD; Frankfort <span class="tab-count" id="tc-Frankfort">–</span></button>
+  <button class="tab-btn" onclick="switchTab('Lexington',this)">&#x1F4CD; Lexington <span class="tab-count" id="tc-Lexington">–</span></button>
 </div>
 <div id="main-content" style="padding:12px 16px;">
   <div id="loading-overlay"><div class="spinner"></div><div class="loading-txt">Loading fleet data…</div></div>
   <div id="error-msg"></div>
   <div id="panes"></div>
 </div>
+<div id="drawer-backdrop" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div id="drawer-header">
+    <div>
+      <div id="drawer-title">Truck #—</div>
+      <div id="drawer-subtitle"></div>
+    </div>
+    <button id="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div id="drawer-body"></div>
+</div>
 <script>
   var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec';
   var REFRESH_INTERVAL = 2 * 60 * 1000;
   var LOCATIONS   = ['Frankfort', 'Lexington'];
   var TRUCK_TYPES = ['All', 'Concrete Mixer', 'Dump Truck', 'Tractor'];
-  var _allTrucks = [], _activeTab = 'Frankfort';
+  var _allTrucks = [], _truckMap = {}, _activeTab = 'Frankfort';
   var _typeFilters = { 'Frankfort': 'All', 'Lexington': 'All' };
   var _refreshTimer = null, _countdownTimer = null, _nextRefreshAt = null, _isLoading = false;
-
   window.addEventListener('load', function() { loadFleetData(); });
-
   function loadFleetData() {
     if (_isLoading) return;
     _isLoading = true;
@@ -143,13 +210,11 @@
         scheduleNextRefresh();
       });
   }
-
   function manualRefresh() {
     clearTimeout(_refreshTimer); clearInterval(_countdownTimer);
     document.getElementById('next-refresh').textContent = '';
     loadFleetData();
   }
-
   function scheduleNextRefresh() {
     clearTimeout(_refreshTimer); clearInterval(_countdownTimer);
     _nextRefreshAt = Date.now() + REFRESH_INTERVAL;
@@ -161,18 +226,15 @@
       if (m <= 0 && s <= 0) clearInterval(_countdownTimer);
     }, 1000);
   }
-
-  function switchTab(location, btn) {
-    _activeTab = location;
+  function switchTab(loc, btn) {
+    _activeTab = loc;
     document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
     btn.classList.add('active');
     document.querySelectorAll('.location-pane').forEach(function(p) { p.classList.remove('active'); });
-    var pane = document.getElementById('pane-' + safeCssId(location));
+    var pane = document.getElementById('pane-' + safeCssId(loc));
     if (pane) pane.classList.add('active');
   }
-
-  function safeCssId(s) { return s.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, ''); }
-
+  function safeCssId(s) { return s.replace(/s+/g,'_').replace(/[^a-zA-Z0-9_]/g,''); }
   function sortTrucks(arr) {
     return arr.slice().sort(function(a, b) {
       var na = parseFloat(a.truckNumber), nb = parseFloat(b.truckNumber);
@@ -180,7 +242,6 @@
       return (b.truckNumber || '').localeCompare(a.truckNumber || '');
     });
   }
-
   function setTypeFilter(loc, type) {
     _typeFilters[loc] = type;
     renderPane(loc);
@@ -189,13 +250,16 @@
       b.classList.toggle('active', b.dataset.type === type);
     });
   }
-
   function renderAll(trucks) {
-    _allTrucks = trucks;
+    _allTrucks = trucks; _truckMap = {};
+    trucks.forEach(function(t) { _truckMap[t.truckNumber] = t; });
     var byLoc = {};
     LOCATIONS.forEach(function(loc) { byLoc[loc] = []; });
     trucks.forEach(function(t) { if (byLoc[t.location] !== undefined) byLoc[t.location].push(t); });
-    LOCATIONS.forEach(function(loc) { var el = document.getElementById('tc-' + loc); if (el) el.textContent = byLoc[loc].length; });
+    LOCATIONS.forEach(function(loc) {
+      var el = document.getElementById('tc-' + loc);
+      if (el) el.textContent = byLoc[loc].length;
+    });
     var panesEl = document.getElementById('panes');
     panesEl.innerHTML = '';
     LOCATIONS.forEach(function(loc) {
@@ -205,82 +269,159 @@
       var fb = '<div class="type-filter-bar"><span class="filter-label">Filter by type:</span>';
       TRUCK_TYPES.forEach(function(type) {
         var a = (_typeFilters[loc] || 'All') === type;
-        fb += '<button class="type-btn' + (a ? ' active' : '') + '" data-type="' + esc(type) + '" onclick="setTypeFilter(\'' + esc(loc) + '\',\'' + esc(type) + '\')">' + esc(type) + '</button>';
+        fb += '<button class="type-btn' + (a ? ' active' : '') + '" data-type="' + esc(type) + '" onclick="setTypeFilter(\''+esc(loc)+'\',\''+esc(type)+'\')">'+esc(type)+'</button>';
       });
       fb += '</div>';
-      pane.innerHTML = fb + '<div class="summary-placeholder"></div><div class="sections-placeholder"></div>';
+      pane.innerHTML = fb + '<div class="pane-inner"></div>';
       panesEl.appendChild(pane);
       renderPane(loc);
     });
   }
-
   function renderPane(loc) {
     var pane = document.getElementById('pane-' + safeCssId(loc));
     if (!pane) return;
+    var inner = pane.querySelector('.pane-inner');
+    if (!inner) return;
     var af = _typeFilters[loc] || 'All';
     var lt = _allTrucks.filter(function(t) { return t.location === loc; });
-    var filtered = af === 'All' ? lt : lt.filter(function(t) { return (t.type||'').trim().toLowerCase() === af.toLowerCase(); });
+    var filtered = af === 'All' ? lt : lt.filter(function(t) {
+      return (t.type || '').trim().toLowerCase() === af.toLowerCase();
+    });
     var inUse  = sortTrucks(filtered.filter(function(t) { return t.status === 'in_use'; }));
     var idle   = sortTrucks(filtered.filter(function(t) { return t.status === 'not_in_use'; }));
     var redtag = sortTrucks(filtered.filter(function(t) { return t.status === 'red_tagged'; }));
     var fl = af === 'All' ? '' : ' — ' + af + 's';
-    var sum = '<div class="summary-bar">' + si('#66bb6a', inUse.length + ' In Use') + si('#ffee58', idle.length + ' Not In Use') + si('#ef5350', redtag.length + ' Red Tagged') + si('#4fc3f7', filtered.length + ' Total' + fl) + '</div>';
-    var secs = '<div class="sections-wrap">' + bsec('green','IN USE TODAY',inUse,buildInUseCard) + bsec('yellow','NOT IN USE',idle,buildIdleCard) + bsec('red','RED TAGGED',redtag,buildRedTagCard) + '</div>';
-    var sp = pane.querySelector('.summary-placeholder');
-    var secp = pane.querySelector('.sections-placeholder');
-    if (sp) sp.outerHTML = sum; else { var sb = pane.querySelector('.summary-bar'); if (sb) sb.outerHTML = sum; }
-    var newSecp = pane.querySelector('.sections-placeholder');
-    if (newSecp) newSecp.outerHTML = secs; else { var sw = pane.querySelector('.sections-wrap'); if (sw) sw.outerHTML = secs; }
+    var inGrow = Math.max(inUse.length, 2);
+    var idGrow = Math.max(idle.length, 2);
+    var sum = '<div class="summary-bar">'
+      + si('#66bb6a', inUse.length + ' In Use')
+      + si('#ffee58', idle.length + ' Not In Use')
+      + si('#ef5350', redtag.length + ' Red Tagged')
+      + si('#4fc3f7', filtered.length + ' Total' + fl)
+      + '</div>';
+    var wrap = '<div class="sections-wrap">'
+      + '<div class="section-block section-inuse" style="flex:'+inGrow+' 1 0">'
+      + buildSection('green','IN USE TODAY',inUse,buildInUseCard)
+      + '</div>'
+      + '<div class="section-block section-idle" style="flex:'+idGrow+' 1 0">'
+      + buildSection('yellow','NOT IN USE',idle,buildIdleCard)
+      + '</div>'
+      + '<div class="section-block section-redtag">'
+      + buildSection('red','RED TAGGED',redtag,buildRedTagCard)
+      + '</div></div>';
+    inner.innerHTML = sum + wrap;
   }
-
-  function si(color, label) { return '<div class="summary-item"><div class="summary-dot" style="background:' + color + ';box-shadow:0 0 4px ' + color + '"></div><span>' + esc(label) + '</span></div>'; }
-
-  function bsec(color, title, trucks, fn) {
-    var h = '<div class="section-header ' + color + '"><div class="col-dot ' + color + '"></div>' + esc(title) + '<span class="col-count">' + trucks.length + '</span></div>';
-    var b = trucks.length === 0 ? '<div class="col-empty">None right now</div>' : trucks.map(fn).join('');
-    return '<div><div>' + h + '</div><div class="card-grid">' + b + '</div></div>';
+  function si(color, label) {
+    return '<div class="summary-item"><div class="summary-dot" style="background:'+color+';box-shadow:0 0 4px '+color+'"></div><span>'+esc(label)+'</span></div>';
   }
-
+  function buildSection(color, title, trucks, cardFn) {
+    var header = '<div class="section-header '+color+'"><div class="col-dot '+color+'"></div>'+esc(title)+'<span class="col-count">'+trucks.length+'</span></div>';
+    var body = trucks.length === 0 ? '<div class="col-empty">None right now</div>' : trucks.map(cardFn).join('');
+    return header + '<div class="card-grid">' + body + '</div>';
+  }
   function typeChip(type) {
     var s = (type||'').replace('Concrete Mixer','Mixer').replace('Dump Truck','Dump');
-    return '<span class="card-type-chip">' + esc(s) + '</span>';
+    return '<span class="card-type-chip">'+esc(s)+'</span>';
   }
-
+  function driverRowHTML(name, photo, isAssigned, label) {
+    var assigned = isAssigned === true, temp = isAssigned === false;
+    var cls = temp ? 'temp' : (assigned ? 'assigned' : '');
+    var avCls = temp ? 'temp-av' : 'assigned-av';
+    var initials = (name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    var avatar = photo
+      ? '<div class="driver-mini-avatar '+avCls+'"><img src="'+photo+'" alt=""></div>'
+      : '<div class="driver-mini-avatar '+avCls+'">'+esc(initials)+'</div>';
+    var tempLine = temp ? '<span class="temp-flag">⚠ Temp Truck</span>' : '';
+    return '<div class="card-driver-row '+cls+'">'
+      +avatar+'<div class="driver-name-col"><div class="driver-name-text">'+esc(name)+'</div>'
+      +'<div class="driver-label-text">'+esc(label)+tempLine+'</div></div></div>';
+  }
   function buildInUseCard(t) {
-    var ab = typeof t.driverAssigned === 'boolean' ? ' <span class="card-assign ' + (t.driverAssigned ? 'assign-assigned' : 'assign-temp') + '">' + (t.driverAssigned ? 'Assigned' : 'Temp') + '</span>' : '';
-    var def = t.preTrip ? (t.preTrip.hasDefects ? '<div class="card-defect-warn">⚠ ' + t.preTrip.defectCount + ' defect(s)</div>' : '<div class="card-defect-ok">✓ No defects</div>') : '';
-    return '<div class="truck-card inuse">'
-      + '<div class="card-num-row"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
-      + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
-      + '<div class="card-status s-green"><div class="dot"></div>In Use Today</div>'
-      + (t.currentDriver ? '<div class="card-driver-line"><strong>' + esc(t.currentDriver) + '</strong>' + ab + '</div>' : '')
-      + def + '</div>';
+    var dr = t.currentDriver ? driverRowHTML(t.currentDriver,t.driverPhoto,t.driverAssigned,'Driver') : '';
+    var def = t.preTrip ? (t.preTrip.hasDefects ? '<div class="card-defect-warn">⚠ '+t.preTrip.defectCount+' defect(s)</div>' : '<div class="card-defect-ok">✓ No defects</div>') : '';
+    return '<div class="truck-card inuse" onclick="openDrawer(\''+esc(t.truckNumber)+'\')"><div class="card-num-row"><span class="card-num">#'+esc(t.truckNumber)+'</span>'+typeChip(t.type)+'</div><div class="card-make">'+esc(t.year+' '+t.make)+'</div><div class="card-status s-green"><div class="dot"></div>In Use Today</div>'+dr+def+'<div class="click-hint">tap for details ›</div></div>';
   }
-
   function buildIdleCard(t) {
-    var def = t.lastTrip ? (t.lastTrip.hasDefects ? '<div class="card-defect-warn">⚠ ' + t.lastTrip.defectCount + ' defect(s) last trip</div>' : '<div class="card-defect-ok">✓ No defects</div>') : '<div class="card-defect-ok">✓ No history yet</div>';
-    var lt = t.lastTripDate ? '<div class="card-last-trip">Last: ' + esc(fmtDate(t.lastTripDate)) + '</div>' : '';
-    var ld = t.lastDriver ? '<div class="card-driver-line">' + esc(t.lastDriver) + '</div>' : '';
-    return '<div class="truck-card idle">'
-      + '<div class="card-num-row"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
-      + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
-      + '<div class="card-status s-yellow"><div class="dot"></div>Not In Use</div>'
-      + ld + def + lt + '</div>';
+    var dr = t.lastDriver ? driverRowHTML(t.lastDriver,t.lastDriverPhoto,t.lastDriverAssigned,'Last Driver') : '';
+    var def = t.lastTrip ? (t.lastTrip.hasDefects ? '<div class="card-defect-warn">⚠ '+t.lastTrip.defectCount+' defect(s) last trip</div>' : '<div class="card-defect-ok">✓ No defects</div>') : '<div class="card-defect-ok">✓ No history yet</div>';
+    var lt = t.lastTripDate ? '<div class="card-last-trip">Last: '+esc(fmtDate(t.lastTripDate))+'</div>' : '';
+    return '<div class="truck-card idle" onclick="openDrawer(\''+esc(t.truckNumber)+'\')"><div class="card-num-row"><span class="card-num">#'+esc(t.truckNumber)+'</span>'+typeChip(t.type)+'</div><div class="card-make">'+esc(t.year+' '+t.make)+'</div><div class="card-status s-yellow"><div class="dot"></div>Not In Use</div>'+dr+def+lt+'<div class="click-hint">tap for details ›</div></div>';
   }
-
   function buildRedTagCard(t) {
-    var r = t.redTag ? '<div class="card-redtag-reason">🔴 ' + esc(t.redTag.reason||'No reason given') + '</div>' : '';
-    var by = t.redTag ? '<div class="card-driver-line">By: <strong>' + esc(t.redTag.taggedBy) + '</strong></div>' : '';
-    return '<div class="truck-card redtag">'
-      + '<div class="card-num-row"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
-      + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
-      + '<div class="card-status s-red"><div class="dot"></div>Red Tagged</div>'
-      + r + by + '</div>';
+    var r = t.redTag ? '<div class="card-redtag-reason">🔴 '+esc(t.redTag.reason||'No reason given')+'</div>' : '';
+    var by = t.redTag ? '<div class="card-last-trip">By: '+esc(t.redTag.taggedBy)+'</div>' : '';
+    return '<div class="truck-card redtag" onclick="openDrawer(\''+esc(t.truckNumber)+'\')"><div class="card-num-row"><span class="card-num">#'+esc(t.truckNumber)+'</span>'+typeChip(t.type)+'</div><div class="card-make">'+esc(t.year+' '+t.make)+'</div><div class="card-status s-red"><div class="dot"></div>Red Tagged</div>'+r+by+'<div class="click-hint">tap for details ›</div></div>';
   }
-
-  function esc(s) { return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+  function openDrawer(truckNum) {
+    var t = _truckMap[truckNum];
+    if (!t) return;
+    document.getElementById('drawer-title').textContent = 'Truck #' + t.truckNumber;
+    document.getElementById('drawer-subtitle').textContent = t.year + ' ' + t.make + ' — ' + (t.type||'') + ' — ' + (t.location||'');
+    var body = '';
+    var statusHtml = '';
+    if (t.status==='in_use') statusHtml='<div class="drawer-status ds-green"><div class="dot"></div>In Use Today</div>';
+    else if (t.status==='not_in_use') statusHtml='<div class="drawer-status ds-yellow"><div class="dot"></div>Not In Use</div>';
+    else if (t.status==='red_tagged') statusHtml='<div class="drawer-status ds-red"><div class="dot"></div>Red Tagged</div>';
+    body += '<div class="drawer-section"><div class="drawer-section-title">Truck Info</div>'
+      +'<div class="drawer-row"><span class="drawer-lbl">Truck #</span><span class="drawer-val bold">'+esc(t.truckNumber)+'</span></div>'
+      +'<div class="drawer-row"><span class="drawer-lbl">Year / Make</span><span class="drawer-val">'+esc(t.year+' '+t.make)+'</span></div>'
+      +'<div class="drawer-row"><span class="drawer-lbl">Type</span><span class="drawer-val">'+esc(t.type||'—')+'</span></div>'
+      +'<div class="drawer-row"><span class="drawer-lbl">Location</span><span class="drawer-val">'+esc(t.location||'—')+'</span></div>'
+      +(t.vin?'<div class="drawer-row"><span class="drawer-lbl">VIN</span><span class="drawer-val" style="font-size:0.75rem;word-break:break-all">'+esc(t.vin)+'</span></div>':'')
+      +'<div class="drawer-row"><span class="drawer-lbl">Status</span><span class="drawer-val">'+statusHtml+'</span></div></div>';
+    if (t.status==='in_use' && t.currentDriver) {
+      var isTemp=t.driverAssigned===false, isAssigned=t.driverAssigned===true;
+      var avCls=isTemp?'temp-av':'assigned-av';
+      var initials=t.currentDriver.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+      var avHtml=t.driverPhoto?'<div class="drawer-avatar '+avCls+'"><img src="'+t.driverPhoto+'" alt=""></div>':'<div class="drawer-avatar '+avCls+'">'+esc(initials)+'</div>';
+      var pillHtml=isTemp?'<span class="assign-pill temp">⚠ Temporary Assignment</span>':(isAssigned?'<span class="assign-pill assigned">✓ Assigned Truck</span>':'');
+      body+='<div class="drawer-section"><div class="drawer-section-title">Current Driver</div><div class="drawer-driver-card '+(isTemp?'temp-card':'assigned-card')+'">'+avHtml+'<div class="drawer-driver-info"><div class="drawer-driver-name">'+esc(t.currentDriver)+'</div><div class="drawer-driver-meta">Driving today</div>'+pillHtml+'</div></div></div>';
+    }
+    if (t.lastDriver) {
+      var lTemp=t.lastDriverAssigned===false, lAssigned=t.lastDriverAssigned===true;
+      var lAvCls=lTemp?'temp-av':'assigned-av';
+      var lInitials=t.lastDriver.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+      var lAvHtml=t.lastDriverPhoto?'<div class="drawer-avatar '+lAvCls+'"><img src="'+t.lastDriverPhoto+'" alt=""></div>':'<div class="drawer-avatar '+lAvCls+'">'+esc(lInitials)+'</div>';
+      var lPillHtml=lTemp?'<span class="assign-pill temp">⚠ Was Temporary</span>':(lAssigned?'<span class="assign-pill assigned">✓ Assigned Truck</span>':'');
+      var lDateLine=t.lastTripDate?'<div class="drawer-driver-meta">Last trip: '+esc(fmtDate(t.lastTripDate))+'</div>':'';
+      body+='<div class="drawer-section"><div class="drawer-section-title">'+(t.status==='in_use'?'Previous Driver':'Last Driver')+'</div><div class="drawer-driver-card '+(lTemp?'temp-card':'assigned-card')+'">'+lAvHtml+'<div class="drawer-driver-info"><div class="drawer-driver-name">'+esc(t.lastDriver)+'</div>'+lDateLine+lPillHtml+'</div></div></div>';
+    }
+    var tripRec = t.status==='in_use' ? t.preTrip : t.lastTrip;
+    if (tripRec) {
+      var fixed=(tripRec.disposition||'').toLowerCase()==='corrected';
+      var dispTag=tripRec.hasDefects?(fixed?'<span class="disposition-tag corrected">✓ Defects Corrected Before Departure</span>':'<span class="disposition-tag open">⚠ Defects Not Yet Corrected</span>'):'';
+      var defectBody='';
+      if (!tripRec.hasDefects) {
+        defectBody='<div class="defect-none">No defects reported on '+(t.status==='in_use'?'current pre-trip':'last trip')+'</div>';
+      } else {
+        defectBody+='<div class="defect-item"><div class="defect-dot '+(fixed?'defect-fixed-dot':'')+'"></div><div>'+esc(tripRec.defectCount+' item(s) flagged as defective')+(tripRec.defectsNotes?'<br><span style="color:#8fa8c8;font-size:0.75rem">'+esc(tripRec.defectsNotes)+'</span>':'')+'</div></div>';
+        defectBody+=dispTag;
+      }
+      body+='<div class="drawer-section"><div class="drawer-section-title">'+(t.status==='in_use'?'Current Pre-Trip':'Last Trip Inspection')+'</div>'+defectBody+'</div>';
+    }
+    if (t.redTag) {
+      body+='<div class="drawer-section"><div class="drawer-section-title">Red Tag Details</div><div class="redtag-detail-box"><div class="redtag-detail-reason">🔴 '+esc(t.redTag.reason||'No reason specified')+'</div><div class="redtag-detail-meta">Tagged by: <strong>'+esc(t.redTag.taggedBy)+'</strong>'+(t.redTag.taggedByRole?' ('+esc(t.redTag.taggedByRole)+')':'')+'</div>'+(t.redTag.taggedAt?'<div class="redtag-detail-meta" style="margin-top:4px">Tagged: '+esc(fmtDateTime(t.redTag.taggedAt))+'</div>':'')+'</div><div style="margin-top:10px;font-size:0.78rem;color:#ef9a9a;font-weight:600">This truck is out of service until the red tag is resolved.</div></div>';
+    }
+    if (t.notes) {
+      body+='<div class="drawer-section"><div class="drawer-section-title">Truck Notes</div><div style="font-size:0.82rem;color:#cdd5e0">'+esc(t.notes)+'</div></div>';
+    }
+    document.getElementById('drawer-body').innerHTML = body;
+    document.getElementById('drawer-backdrop').classList.add('open');
+    document.getElementById('drawer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeDrawer() {
+    document.getElementById('drawer-backdrop').classList.remove('open');
+    document.getElementById('drawer').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  document.addEventListener('keydown', function(e) { if (e.key==='Escape') closeDrawer(); });
+  function esc(s) {
+    return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
   function fmtTime(d) { var h=d.getHours(),m=d.getMinutes(),ap=h<12?'AM':'PM'; h=h%12||12; return h+':'+(m<10?'0':'')+m+' '+ap; }
   function fmtDate(iso) { if(!iso)return''; var d=new Date(iso+'T00:00:00'); if(isNaN(d))return iso; return (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2); }
+  function fmtDateTime(ts) { if(!ts)return''; var d=new Date(ts); if(isNaN(d))return ts; return (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2)+' '+fmtTime(d); }
 </script>
 </body>
 </html>
