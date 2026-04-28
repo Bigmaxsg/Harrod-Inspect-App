@@ -295,9 +295,10 @@
     var fl = af ? ' - ' + af + 's' : '';
     // Column widths: In Use grows 1 to 7 as trucks pre-trip, Not In Use shrinks from 8 to 2
     // Each card slot = 158px + 7px gap; section padding = 8px each side
-    var iuCols = inUse.length === 0 ? 2 : Math.min(inUse.length, 7);
-    var niuCols = 9 - iuCols;
-    function colW(n) { return n * 158 + Math.max(n - 1, 0) * 7 + 16; }
+    var iuCols  = inUse.length === 0 ? 2 : Math.min(inUse.length, 7);
+    var niuMax  = 9 - iuCols;
+    var niuCols = Math.max(2, idle.length === 0 ? 2 : Math.min(idle.length, niuMax));
+    function colW(n) { return n * 158 + Math.max(n - 1, 0) * 7 + 18; }
     var iuW  = colW(iuCols);
     var niuW = colW(niuCols);
     var rtW  = colW(2);
