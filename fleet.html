@@ -162,6 +162,21 @@
     .drawer-section-title { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4fc3f7; margin-bottom: 10px; }
     .drawer-row { display: flex; gap: 10px; margin-bottom: 7px; font-size: 0.82rem; }
     .drawer-row:last-child { margin-bottom: 0; }
+    .drawer-truck-photo-wrap {
+  width: 100%;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.drawer-truck-photo {
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
+}
     .drawer-lbl { color: #6b90b8; font-weight: 600; min-width: 90px; flex-shrink: 0; }
     .drawer-val { color: #e0e8f4; font-weight: 500; }
     .drawer-val.bold { font-weight: 800; color: #fff; }
@@ -453,7 +468,14 @@
     document.getElementById('drawer-title').textContent = 'Truck #' + t.truckNumber;
     document.getElementById('drawer-subtitle').textContent = t.year + ' ' + t.make + ' - ' + (t.type||'') + ' - ' + (t.location||'');
     var body = '';
-    var statusHtml = '';
+
+if (t.frontThumb) {
+  body += '<div class="drawer-truck-photo-wrap">'
+    + '<img class="drawer-truck-photo" src="' + t.frontThumb + '" alt="Truck #' + esc(t.truckNumber) + '">'
+    + '</div>';
+}
+
+var statusHtml = '';
     if (t.status==='in_use') statusHtml='<div class="drawer-status ds-green"><div class="dot"></div>In Use Today</div>';
     else if (t.status==='not_in_use') statusHtml='<div class="drawer-status ds-yellow"><div class="dot"></div>Not In Use</div>';
     else if (t.status==='red_tagged') statusHtml='<div class="drawer-status ds-red"><div class="dot"></div>Red Tagged</div>';
