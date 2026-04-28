@@ -7,104 +7,91 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #0e1a2e; color: #f0f4f8; min-height: 100vh; }
-    #top-bar { background: linear-gradient(135deg, #1c2e4a 0%, #0e1a2e 100%); border-bottom: 2px solid #2a4a7f; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
-    #top-bar-left { display: flex; align-items: center; gap: 14px; }
-    #top-bar h1 { font-size: 1.25rem; font-weight: 700; color: #fff; letter-spacing: 0.02em; }
+    #top-bar { background: linear-gradient(135deg, #1c2e4a 0%, #0e1a2e 100%); border-bottom: 2px solid #2a4a7f; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+    #top-bar-left { display: flex; align-items: center; gap: 12px; }
+    #top-bar h1 { font-size: 1.1rem; font-weight: 700; color: #fff; letter-spacing: 0.02em; }
     #top-bar h1 span { color: #4fc3f7; }
-    .back-btn { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,0.1); color: #cdd5e0; text-decoration: none; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; padding: 6px 14px; font-size: 0.85rem; transition: background 0.2s; }
+    .back-btn { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1); color: #cdd5e0; text-decoration: none; border: 1px solid rgba(255,255,255,0.2); border-radius: 7px; padding: 5px 12px; font-size: 0.8rem; transition: background 0.2s; }
     .back-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
-    #top-bar-right { display: flex; align-items: center; gap: 14px; }
-    #refresh-info { font-size: 0.78rem; color: #8fa8c8; text-align: right; }
+    #top-bar-right { display: flex; align-items: center; gap: 12px; }
+    #refresh-info { font-size: 0.75rem; color: #8fa8c8; text-align: right; }
     #last-updated { display: block; }
-    #next-refresh { display: block; color: #6b90b8; }
-    #refresh-btn { background: #1565c0; color: #fff; border: none; border-radius: 8px; padding: 8px 18px; font-size: 0.85rem; font-weight: 700; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 6px; }
+    #next-refresh { display: block; color: #6b90b8; font-size: 0.68rem; }
+    #refresh-btn { background: #1565c0; color: #fff; border: none; border-radius: 7px; padding: 6px 14px; font-size: 0.8rem; font-weight: 700; cursor: pointer; transition: background 0.2s; display: flex; align-items: center; gap: 5px; }
     #refresh-btn:hover { background: #1976d2; }
     #refresh-btn.spinning svg { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    #tab-bar { display: flex; gap: 0; background: #111d2e; border-bottom: 2px solid #1e3052; padding: 0 20px; }
-    .tab-btn { padding: 12px 24px; font-size: 0.9rem; font-weight: 600; color: #6b90b8; background: transparent; border: none; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+    #tab-bar { display: flex; background: #111d2e; border-bottom: 2px solid #1e3052; padding: 0 16px; }
+    .tab-btn { padding: 10px 22px; font-size: 0.88rem; font-weight: 600; color: #6b90b8; background: transparent; border: none; border-bottom: 3px solid transparent; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
     .tab-btn:hover { color: #9ac3e8; }
     .tab-btn.active { color: #4fc3f7; border-bottom-color: #4fc3f7; }
-    .tab-count { display: inline-block; background: rgba(79,195,247,0.15); color: #4fc3f7; border-radius: 10px; padding: 1px 7px; font-size: 0.75rem; margin-left: 6px; }
-    #loading-overlay { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; gap: 16px; }
-    .spinner { width: 44px; height: 44px; border: 4px solid rgba(79,195,247,0.2); border-top-color: #4fc3f7; border-radius: 50%; animation: spin 0.8s linear infinite; }
-    .loading-txt { color: #8fa8c8; font-size: 0.9rem; }
-    #error-msg { display: none; background: #3e1010; border: 1px solid #c62828; color: #ef9a9a; border-radius: 10px; padding: 16px 24px; margin: 24px; font-size: 0.9rem; }
-    .location-pane { display: none; padding: 16px 20px; }
+    .tab-count { display: inline-block; background: rgba(79,195,247,0.15); color: #4fc3f7; border-radius: 10px; padding: 1px 7px; font-size: 0.72rem; margin-left: 5px; }
+    #loading-overlay { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 300px; gap: 14px; }
+    .spinner { width: 40px; height: 40px; border: 4px solid rgba(79,195,247,0.2); border-top-color: #4fc3f7; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .loading-txt { color: #8fa8c8; font-size: 0.88rem; }
+    #error-msg { display: none; background: #3e1010; border: 1px solid #c62828; color: #ef9a9a; border-radius: 10px; padding: 14px 20px; margin: 20px; font-size: 0.88rem; }
+    .location-pane { display: none; padding: 12px 16px; }
     .location-pane.active { display: block; }
-    .columns-wrap { display: grid; grid-template-columns: 1fr 1fr 320px; gap: 16px; align-items: start; }
-    .col-header { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: 10px 10px 0 0; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.04em; margin-bottom: 0; }
-    .col-header.green  { background: #1b3d1e; color: #a5d6a7; border-bottom: 2px solid #2e7d32; }
-    .col-header.yellow { background: #3d3000; color: #fff176; border-bottom: 2px solid #f9a825; }
-    .col-header.red    { background: #3e1010; color: #ef9a9a; border-bottom: 2px solid #c62828; }
-    .col-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .col-dot.green  { background: #66bb6a; box-shadow: 0 0 6px #66bb6a; }
-    .col-dot.yellow { background: #ffee58; box-shadow: 0 0 6px #ffee58; }
-    .col-dot.red    { background: #ef5350; box-shadow: 0 0 6px #ef5350; }
-    .col-count { margin-left: auto; font-size: 0.78rem; opacity: 0.7; }
-    .col-body { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-top: none; border-radius: 0 0 10px 10px; padding: 10px; min-height: 80px; display: flex; flex-direction: column; gap: 10px; }
-    .col-empty { text-align: center; padding: 24px 12px; color: #4a6080; font-size: 0.82rem; font-style: italic; }
-    .truck-card { background: #fff; border-radius: 10px; padding: 12px; color: #1a2535; box-shadow: 0 2px 8px rgba(0,0,0,0.25); display: flex; flex-direction: column; gap: 8px; transition: transform 0.15s; }
-    .truck-card:hover { transform: translateY(-1px); }
-    .truck-card.redtag { border-left: 4px solid #ef5350; }
-    .truck-card.inuse  { border-left: 4px solid #66bb6a; }
-    .truck-card.idle   { border-left: 4px solid #ffee58; }
-    .card-top { display: flex; gap: 10px; align-items: flex-start; }
-    .card-truck-photo { width: 72px; height: 72px; flex-shrink: 0; border-radius: 8px; overflow: hidden; background: #e8edf4; display: flex; align-items: center; justify-content: center; }
-    .card-truck-photo img { width: 100%; height: 100%; object-fit: cover; }
-    .coming-soon { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 0.58rem; font-weight: 600; color: #8fa8c8; text-align: center; padding: 4px; background: #e8edf4; width: 100%; height: 100%; border-radius: 8px; }
-    .coming-soon svg { opacity: 0.5; }
-    .card-info { flex: 1; min-width: 0; }
-    .card-truck-num { font-size: 1.1rem; font-weight: 800; color: #0d2a5e; line-height: 1.1; }
-    .card-model { font-size: 0.75rem; color: #4a6080; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card-type { font-size: 0.72rem; color: #6b7fa0; margin-top: 2px; }
-    .status-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.03em; margin-top: 5px; white-space: nowrap; }
-    .status-badge .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-    .status-green  { background: #e8f5e9; color: #2e7d32; }
-    .status-green .dot { background: #43a047; }
-    .status-yellow { background: #fff8e1; color: #e65100; }
-    .status-yellow .dot { background: #f9a825; }
-    .status-red    { background: #ffebee; color: #c62828; }
-    .status-red .dot { background: #ef5350; }
-    .card-driver { display: flex; align-items: center; gap: 8px; background: #f5f7fa; border-radius: 7px; padding: 6px 8px; }
-    .driver-avatar { width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; background: #1565c0; color: #fff; font-size: 0.8rem; font-weight: 700; }
-    .driver-avatar img { width: 100%; height: 100%; object-fit: cover; }
-    .driver-info { flex: 1; min-width: 0; }
-    .driver-name  { font-size: 0.8rem; font-weight: 700; color: #1a2535; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .driver-role  { font-size: 0.68rem; color: #6b7fa0; }
-    .assign-badge { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 0.67rem; font-weight: 700; white-space: nowrap; }
+    .type-filter-bar { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; align-items: center; }
+    .type-filter-bar .filter-label { font-size: 0.73rem; font-weight: 600; color: #6b90b8; margin-right: 2px; white-space: nowrap; }
+    .type-btn { padding: 4px 12px; border-radius: 16px; font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.07); color: #9ac3e8; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .type-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
+    .type-btn.active { background: #1565c0; border-color: #1976d2; color: #fff; box-shadow: 0 0 8px rgba(21,101,192,0.4); }
+    .summary-bar { display: flex; gap: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 14px; margin-bottom: 10px; flex-wrap: wrap; }
+    .summary-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; }
+    .summary-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .sections-wrap { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; align-items: start; }
+    @media (max-width: 900px) { .sections-wrap { grid-template-columns: 1fr 1fr; } }
+    @media (max-width: 600px) { .sections-wrap { grid-template-columns: 1fr; } }
+    .section-header { display: flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 8px 8px 0 0; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; }
+    .section-header.green  { background: #1b3d1e; color: #a5d6a7; border-bottom: 2px solid #2e7d32; }
+    .section-header.yellow { background: #3d3000; color: #fff176; border-bottom: 2px solid #f9a825; }
+    .section-header.red    { background: #3e1010; color: #ef9a9a; border-bottom: 2px solid #c62828; }
+    .col-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+    .col-dot.green  { background: #66bb6a; box-shadow: 0 0 5px #66bb6a; }
+    .col-dot.yellow { background: #ffee58; box-shadow: 0 0 5px #ffee58; }
+    .col-dot.red    { background: #ef5350; box-shadow: 0 0 5px #ef5350; }
+    .col-count { margin-left: auto; font-size: 0.72rem; opacity: 0.7; }
+    .card-grid { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-top: none; border-radius: 0 0 8px 8px; padding: 8px; min-height: 60px; display: flex; flex-wrap: wrap; gap: 7px; align-content: flex-start; }
+    .col-empty { width: 100%; text-align: center; padding: 20px 8px; color: #4a6080; font-size: 0.78rem; font-style: italic; }
+    .truck-card { background: #fff; border-radius: 8px; padding: 9px 10px; color: #1a2535; box-shadow: 0 1px 6px rgba(0,0,0,0.22); width: 160px; flex-shrink: 0; display: flex; flex-direction: column; gap: 5px; transition: transform 0.12s, box-shadow 0.12s; border-left: 3px solid #ccc; }
+    .truck-card:hover { transform: translateY(-2px); box-shadow: 0 3px 12px rgba(0,0,0,0.3); }
+    .truck-card.inuse  { border-left-color: #43a047; }
+    .truck-card.idle   { border-left-color: #f9a825; }
+    .truck-card.redtag { border-left-color: #ef5350; }
+    .card-num-row { display: flex; align-items: baseline; justify-content: space-between; gap: 4px; }
+    .card-num { font-size: 1.15rem; font-weight: 900; color: #0d2a5e; line-height: 1; }
+    .card-type-chip { font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 8px; white-space: nowrap; letter-spacing: 0.02em; background: #e8edf8; color: #3a5a8c; flex-shrink: 0; }
+    .card-make { font-size: 0.68rem; color: #5a6e8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-status { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 12px; font-size: 0.65rem; font-weight: 700; width: fit-content; }
+    .card-status .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .s-green  { background: #e8f5e9; color: #2e7d32; }
+    .s-green .dot  { background: #43a047; }
+    .s-yellow { background: #fff8e1; color: #e65100; }
+    .s-yellow .dot { background: #f9a825; }
+    .s-red    { background: #ffebee; color: #c62828; }
+    .s-red .dot    { background: #ef5350; }
+    .card-driver-line { font-size: 0.67rem; color: #3a5270; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-driver-line strong { color: #1a3a5e; }
+    .card-defect-ok   { font-size: 0.63rem; color: #2e7d32; font-weight: 600; }
+    .card-defect-warn { font-size: 0.63rem; color: #e65100; font-weight: 600; }
+    .card-redtag-reason { font-size: 0.63rem; color: #c62828; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-last-trip { font-size: 0.6rem; color: #7a8fa8; }
+    .card-assign { font-size: 0.58rem; font-weight: 700; padding: 1px 5px; border-radius: 6px; display: inline-block; }
     .assign-assigned { background: #e3f2fd; color: #1565c0; }
     .assign-temp     { background: #fff8e1; color: #e65100; }
-    .defect-clear { display: flex; align-items: center; gap: 5px; background: #e8f5e9; border-radius: 6px; padding: 4px 9px; font-size: 0.73rem; font-weight: 600; color: #2e7d32; }
-    .defect-alert { background: #fff3e0; border-radius: 6px; padding: 4px 9px; font-size: 0.73rem; font-weight: 600; color: #e65100; }
-    .defect-notes { background: #fff8e1; border-radius: 6px; padding: 5px 9px; font-size: 0.72rem; color: #555; border-left: 3px solid #f9a825; max-height: 60px; overflow: hidden; text-overflow: ellipsis; }
-    .redtag-reason { background: #fff5f5; border-left: 3px solid #ef5350; border-radius: 6px; padding: 6px 9px; }
-    .redtag-reason .label { font-size: 0.68rem; font-weight: 700; color: #c62828; margin-bottom: 2px; }
-    .redtag-reason .text  { font-size: 0.78rem; color: #333; }
-    .redtag-meta { font-size: 0.7rem; color: #7a7a7a; margin-top: 4px; }
-    .last-trip-pill { font-size: 0.68rem; color: #7a8fa8; background: #eef2f7; border-radius: 6px; padding: 2px 7px; display: inline-block; }
-    .summary-bar { display: flex; gap: 18px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 10px 18px; margin-bottom: 14px; flex-wrap: wrap; }
-    .summary-item { display: flex; align-items: center; gap: 7px; font-size: 0.82rem; }
-    .summary-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-    .type-filter-bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
-    .type-filter-bar .filter-label { font-size: 0.75rem; font-weight: 600; color: #6b90b8; margin-right: 4px; white-space: nowrap; }
-    .type-btn { padding: 5px 14px; border-radius: 20px; font-size: 0.78rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.07); color: #9ac3e8; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-    .type-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
-    .type-btn.active { background: #1565c0; border-color: #1976d2; color: #fff; box-shadow: 0 0 8px rgba(21,101,192,0.5); }
-    @media (max-width: 1100px) { .columns-wrap { grid-template-columns: 1fr 1fr; } .columns-wrap > .col-wrap:last-child { grid-column: 1 / -1; } }
-    @media (max-width: 700px) { .columns-wrap { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
 <div id="top-bar">
   <div id="top-bar-left">
-    <a href="./index.html" class="back-btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Back to App</a>
+    <a href="./index.html" class="back-btn"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Back to App</a>
     <h1>&#x1F69B; Harrod <span>Fleet Live View</span></h1>
   </div>
   <div id="top-bar-right">
     <div id="refresh-info"><span id="last-updated">Loading…</span><span id="next-refresh"></span></div>
     <button id="refresh-btn" onclick="manualRefresh()">
-      <svg id="refresh-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
       Refresh
     </button>
   </div>
@@ -113,7 +100,7 @@
   <button class="tab-btn active" onclick="switchTab('Frankfort', this)">&#x1F4CD; Frankfort <span class="tab-count" id="tc-Frankfort">–</span></button>
   <button class="tab-btn" onclick="switchTab('Lexington', this)">&#x1F4CD; Lexington <span class="tab-count" id="tc-Lexington">–</span></button>
 </div>
-<div id="main-content" style="padding:16px 20px;">
+<div id="main-content" style="padding:12px 16px;">
   <div id="loading-overlay"><div class="spinner"></div><div class="loading-txt">Loading fleet data…</div></div>
   <div id="error-msg"></div>
   <div id="panes"></div>
@@ -123,7 +110,7 @@
   var REFRESH_INTERVAL = 2 * 60 * 1000;
   var LOCATIONS   = ['Frankfort', 'Lexington'];
   var TRUCK_TYPES = ['All', 'Concrete Mixer', 'Dump Truck', 'Tractor'];
-  var _fleetData = null, _activeTab = 'Frankfort', _allTrucks = [];
+  var _allTrucks = [], _activeTab = 'Frankfort';
   var _typeFilters = { 'Frankfort': 'All', 'Lexington': 'All' };
   var _refreshTimer = null, _countdownTimer = null, _nextRefreshAt = null, _isLoading = false;
 
@@ -140,7 +127,6 @@
         _isLoading = false;
         document.getElementById('refresh-btn').classList.remove('spinning');
         if (!data.success) throw new Error(data.message || 'Server error');
-        _fleetData = data;
         document.getElementById('loading-overlay').style.display = 'none';
         document.getElementById('error-msg').style.display = 'none';
         renderAll(data.trucks || []);
@@ -172,7 +158,7 @@
       var s = Math.max(0, Math.round((_nextRefreshAt - Date.now()) / 1000));
       var m = Math.floor(s / 60); s = s % 60;
       document.getElementById('next-refresh').textContent = 'Next refresh in ' + m + ':' + (s < 10 ? '0' : '') + s;
-      if (s <= 0 && m <= 0) clearInterval(_countdownTimer);
+      if (m <= 0 && s <= 0) clearInterval(_countdownTimer);
     }, 1000);
   }
 
@@ -185,13 +171,23 @@
     if (pane) pane.classList.add('active');
   }
 
-  function safeCssId(s) { return s.replace(/s+/g, '_').replace(/[^a-zA-Z0-9_]/g, ''); }
+  function safeCssId(s) { return s.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, ''); }
+
+  function sortTrucks(arr) {
+    return arr.slice().sort(function(a, b) {
+      var na = parseFloat(a.truckNumber), nb = parseFloat(b.truckNumber);
+      if (!isNaN(na) && !isNaN(nb)) return nb - na;
+      return (b.truckNumber || '').localeCompare(a.truckNumber || '');
+    });
+  }
 
   function setTypeFilter(loc, type) {
     _typeFilters[loc] = type;
     renderPane(loc);
     var pane = document.getElementById('pane-' + safeCssId(loc));
-    if (pane) pane.querySelectorAll('.type-btn').forEach(function(b) { b.classList.toggle('active', b.dataset.type === type); });
+    if (pane) pane.querySelectorAll('.type-btn').forEach(function(b) {
+      b.classList.toggle('active', b.dataset.type === type);
+    });
   }
 
   function renderAll(trucks) {
@@ -212,7 +208,7 @@
         fb += '<button class="type-btn' + (a ? ' active' : '') + '" data-type="' + esc(type) + '" onclick="setTypeFilter(\'' + esc(loc) + '\',\'' + esc(type) + '\')">' + esc(type) + '</button>';
       });
       fb += '</div>';
-      pane.innerHTML = fb + '<div class="pane-columns"></div>';
+      pane.innerHTML = fb + '<div class="summary-placeholder"></div><div class="sections-placeholder"></div>';
       panesEl.appendChild(pane);
       renderPane(loc);
     });
@@ -221,67 +217,70 @@
   function renderPane(loc) {
     var pane = document.getElementById('pane-' + safeCssId(loc));
     if (!pane) return;
-    var cc = pane.querySelector('.pane-columns');
-    if (!cc) return;
     var af = _typeFilters[loc] || 'All';
     var lt = _allTrucks.filter(function(t) { return t.location === loc; });
     var filtered = af === 'All' ? lt : lt.filter(function(t) { return (t.type||'').trim().toLowerCase() === af.toLowerCase(); });
-    var inUse  = filtered.filter(function(t) { return t.status === 'in_use'; });
-    var idle   = filtered.filter(function(t) { return t.status === 'not_in_use'; });
-    var redtag = filtered.filter(function(t) { return t.status === 'red_tagged'; });
+    var inUse  = sortTrucks(filtered.filter(function(t) { return t.status === 'in_use'; }));
+    var idle   = sortTrucks(filtered.filter(function(t) { return t.status === 'not_in_use'; }));
+    var redtag = sortTrucks(filtered.filter(function(t) { return t.status === 'red_tagged'; }));
     var fl = af === 'All' ? '' : ' — ' + af + 's';
     var sum = '<div class="summary-bar">' + si('#66bb6a', inUse.length + ' In Use') + si('#ffee58', idle.length + ' Not In Use') + si('#ef5350', redtag.length + ' Red Tagged') + si('#4fc3f7', filtered.length + ' Total' + fl) + '</div>';
-    cc.innerHTML = sum + '<div class="columns-wrap">' + col('green','IN USE TODAY',inUse,buildInUseCard) + col('yellow','NOT IN USE',idle,buildIdleCard) + col('red','RED TAGGED',redtag,buildRedTagCard) + '</div>';
+    var secs = '<div class="sections-wrap">' + bsec('green','IN USE TODAY',inUse,buildInUseCard) + bsec('yellow','NOT IN USE',idle,buildIdleCard) + bsec('red','RED TAGGED',redtag,buildRedTagCard) + '</div>';
+    var sp = pane.querySelector('.summary-placeholder');
+    var secp = pane.querySelector('.sections-placeholder');
+    if (sp) sp.outerHTML = sum; else { var sb = pane.querySelector('.summary-bar'); if (sb) sb.outerHTML = sum; }
+    var newSecp = pane.querySelector('.sections-placeholder');
+    if (newSecp) newSecp.outerHTML = secs; else { var sw = pane.querySelector('.sections-wrap'); if (sw) sw.outerHTML = secs; }
   }
 
-  function si(color, label) { return '<div class="summary-item"><div class="summary-dot" style="background:'+color+';box-shadow:0 0 5px '+color+'"></div><span>'+esc(label)+'</span></div>'; }
-  function col(color, title, trucks, fn) {
-    var h = '<div class="col-header '+color+'"><div class="col-dot '+color+'"></div>'+esc(title)+'<span class="col-count">'+trucks.length+'</span></div>';
+  function si(color, label) { return '<div class="summary-item"><div class="summary-dot" style="background:' + color + ';box-shadow:0 0 4px ' + color + '"></div><span>' + esc(label) + '</span></div>'; }
+
+  function bsec(color, title, trucks, fn) {
+    var h = '<div class="section-header ' + color + '"><div class="col-dot ' + color + '"></div>' + esc(title) + '<span class="col-count">' + trucks.length + '</span></div>';
     var b = trucks.length === 0 ? '<div class="col-empty">None right now</div>' : trucks.map(fn).join('');
-    return '<div class="col-wrap">'+h+'<div class="col-body">'+b+'</div></div>';
+    return '<div><div>' + h + '</div><div class="card-grid">' + b + '</div></div>';
+  }
+
+  function typeChip(type) {
+    var s = (type||'').replace('Concrete Mixer','Mixer').replace('Dump Truck','Dump');
+    return '<span class="card-type-chip">' + esc(s) + '</span>';
   }
 
   function buildInUseCard(t) {
-    var h = '<div class="truck-card inuse"><div class="card-top">'+tp(t)+'<div class="card-info"><div class="card-truck-num">Truck #'+esc(t.truckNumber)+'</div><div class="card-model">'+esc(t.year+' '+t.make)+'</div><div class="card-type">'+esc(t.type)+'</div><div class="status-badge status-green"><div class="dot"></div>In Use Today</div></div></div>';
-    if (t.currentDriver) h += dr(t.currentDriver, t.driverPhoto, t.driverAssigned, 'Driver');
-    if (t.preTrip) { if (!t.preTrip.hasDefects) { h += '<div class="defect-clear">✓ No pre-trip defects</div>'; } else { h += '<div class="defect-alert">⚠ '+t.preTrip.defectCount+' pre-trip defect(s) noted</div>'; if (t.preTrip.defectsNotes) h += '<div class="defect-notes">'+esc(t.preTrip.defectsNotes)+'</div>'; } }
-    return h + '</div>';
+    var ab = typeof t.driverAssigned === 'boolean' ? ' <span class="card-assign ' + (t.driverAssigned ? 'assign-assigned' : 'assign-temp') + '">' + (t.driverAssigned ? 'Assigned' : 'Temp') + '</span>' : '';
+    var def = t.preTrip ? (t.preTrip.hasDefects ? '<div class="card-defect-warn">⚠ ' + t.preTrip.defectCount + ' defect(s)</div>' : '<div class="card-defect-ok">✓ No defects</div>') : '';
+    return '<div class="truck-card inuse">'
+      + '<div class="card-num-row"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
+      + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
+      + '<div class="card-status s-green"><div class="dot"></div>In Use Today</div>'
+      + (t.currentDriver ? '<div class="card-driver-line"><strong>' + esc(t.currentDriver) + '</strong>' + ab + '</div>' : '')
+      + def + '</div>';
   }
 
   function buildIdleCard(t) {
-    var h = '<div class="truck-card idle"><div class="card-top">'+tp(t)+'<div class="card-info"><div class="card-truck-num">Truck #'+esc(t.truckNumber)+'</div><div class="card-model">'+esc(t.year+' '+t.make)+'</div><div class="card-type">'+esc(t.type)+'</div><div class="status-badge status-yellow"><div class="dot"></div>Not In Use</div></div></div>';
-    if (t.lastDriver) h += dr(t.lastDriver, t.lastDriverPhoto, t.lastDriverAssigned, 'Last Driver');
-    if (t.lastTrip) {
-      if (!t.lastTrip.hasDefects) { h += '<div class="defect-clear">✓ No defects reported</div>'; }
-      else { h += '<div class="defect-alert">⚠ '+t.lastTrip.defectCount+' defect(s) on last trip</div>'; if (t.lastTrip.defectsNotes) h += '<div class="defect-notes">'+esc(t.lastTrip.defectsNotes)+'</div>'; }
-      if (t.lastTripDate) h += '<div style="text-align:right"><span class="last-trip-pill">Last trip: '+esc(fmtDate(t.lastTripDate))+'</span></div>';
-    } else { h += '<div class="defect-clear">✓ No trip history yet</div>'; }
-    return h + '</div>';
+    var def = t.lastTrip ? (t.lastTrip.hasDefects ? '<div class="card-defect-warn">⚠ ' + t.lastTrip.defectCount + ' defect(s) last trip</div>' : '<div class="card-defect-ok">✓ No defects</div>') : '<div class="card-defect-ok">✓ No history yet</div>';
+    var lt = t.lastTripDate ? '<div class="card-last-trip">Last: ' + esc(fmtDate(t.lastTripDate)) + '</div>' : '';
+    var ld = t.lastDriver ? '<div class="card-driver-line">' + esc(t.lastDriver) + '</div>' : '';
+    return '<div class="truck-card idle">'
+      + '<div class="card-num-row"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
+      + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
+      + '<div class="card-status s-yellow"><div class="dot"></div>Not In Use</div>'
+      + ld + def + lt + '</div>';
   }
 
   function buildRedTagCard(t) {
-    var h = '<div class="truck-card redtag"><div class="card-top">'+tp(t)+'<div class="card-info"><div class="card-truck-num">Truck #'+esc(t.truckNumber)+'</div><div class="card-model">'+esc(t.year+' '+t.make)+'</div><div class="card-type">'+esc(t.type)+'</div><div class="status-badge status-red"><div class="dot"></div>Red Tagged</div></div></div>';
-    if (t.redTag) { h += '<div class="redtag-reason"><div class="label">🔴 Reason for Down-Time</div><div class="text">'+esc(t.redTag.reason||'No reason specified')+'</div><div class="redtag-meta">Tagged by: <strong>'+esc(t.redTag.taggedBy)+'</strong>'+(t.redTag.taggedByRole?' ('+esc(t.redTag.taggedByRole)+')':'')+'</div>'+(t.redTag.taggedAt?'<div class="redtag-meta">Tagged: '+esc(fmtDateTime(t.redTag.taggedAt))+'</div>':'')+'</div>'; }
-    if (t.lastDriver) h += dr(t.lastDriver, t.lastDriverPhoto, t.lastDriverAssigned, 'Last Driver');
-    return h + '</div>';
-  }
-
-  function tp(t) {
-    if (t.frontThumb) return '<div class="card-truck-photo"><img src="'+t.frontThumb+'" alt="Truck '+esc(t.truckNumber)+'"></div>';
-    return '<div class="card-truck-photo"><div class="coming-soon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8fa8c8" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>Coming<br>Soon</div></div>';
-  }
-
-  function dr(name, photo, isAssigned, label) {
-    var i = (name||'?').split(' ').map(function(w){return w[0];}).join('').slice(0,2).toUpperCase();
-    var av = photo ? '<div class="driver-avatar"><img src="'+photo+'" alt="'+esc(name)+'"></div>' : '<div class="driver-avatar">'+esc(i)+'</div>';
-    var ab = typeof isAssigned === 'boolean' ? '<span class="assign-badge '+(isAssigned?'assign-assigned':'assign-temp')+'">'+(isAssigned?'Assigned Truck':'Temporary Truck')+'</span>' : '';
-    return '<div class="card-driver">'+av+'<div class="driver-info"><div class="driver-name">'+esc(name)+'</div><div class="driver-role">'+esc(label)+(ab?'&nbsp;&nbsp;'+ab:'')+'</div></div></div>';
+    var r = t.redTag ? '<div class="card-redtag-reason">🔴 ' + esc(t.redTag.reason||'No reason given') + '</div>' : '';
+    var by = t.redTag ? '<div class="card-driver-line">By: <strong>' + esc(t.redTag.taggedBy) + '</strong></div>' : '';
+    return '<div class="truck-card redtag">'
+      + '<div class="card-num-row"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
+      + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
+      + '<div class="card-status s-red"><div class="dot"></div>Red Tagged</div>'
+      + r + by + '</div>';
   }
 
   function esc(s) { return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
   function fmtTime(d) { var h=d.getHours(),m=d.getMinutes(),ap=h<12?'AM':'PM'; h=h%12||12; return h+':'+(m<10?'0':'')+m+' '+ap; }
   function fmtDate(iso) { if(!iso)return''; var d=new Date(iso+'T00:00:00'); if(isNaN(d))return iso; return (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2); }
-  function fmtDateTime(ts) { if(!ts)return''; var d=new Date(ts); if(isNaN(d))return ts; return (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2)+' '+fmtTime(d); }
 </script>
 </body>
 </html>
