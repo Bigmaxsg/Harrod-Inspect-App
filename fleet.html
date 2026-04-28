@@ -42,8 +42,35 @@
     .summary-bar { display: flex; gap: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 14px; margin-bottom: 10px; flex-wrap: wrap; }
     .summary-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; }
     .summary-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .sections-wrap { display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; }
-    .section-block { flex: 0 0 auto; display: flex; flex-direction: column; }
+    .sections-wrap {
+  display: grid;
+  gap: 12px;
+  align-items: flex-start;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.sections-wrap.layout-idle {
+  grid-template-columns: 2fr 7fr 2fr;
+}
+
+.sections-wrap.layout-active {
+  grid-template-columns: 7fr 2fr 2fr;
+}
+
+.section-block {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-grid {
+  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
+}
+
+.truck-card {
+  width: 100%;
+}
     .section-header { display: flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 8px 8px 0 0; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; }
     .section-header.green  { background: #1b3d1e; color: #a5d6a7; border-bottom: 2px solid #2e7d32; }
     .section-header.yellow { background: #3d3000; color: #fff176; border-bottom: 2px solid #f9a825; }
@@ -293,29 +320,27 @@
     var idle   = sortTrucks(filtered.filter(function(t) { return t.status === 'not_in_use'; }));
     var redtag = sortTrucks(filtered.filter(function(t) { return t.status === 'red_tagged'; }));
     var fl = af ? ' - ' + af + 's' : '';
-    // Column widths: In Use grows 1 to 7 as trucks pre-trip, Not In Use shrinks from 8 to 2
-    // Each card slot = 158px + 7px gap; section padding = 8px each side
-    var iuCols  = inUse.length === 0 ? 2 : Math.min(inUse.length, 7);
-    var niuMax  = 9 - iuCols;
-    var niuCols = Math.max(2, idle.length === 0 ? 2 : Math.min(idle.length, niuMax));
-    function colW(n) { return n * 158 + Math.max(n - 1, 0) * 7 + 18; }
-    var iuW  = colW(iuCols);
-    var niuW = colW(niuCols);
-    var rtW  = colW(2);
+    var hasInUse = inUse.length > 0;
+
+    var iuCols  = hasInUse ? 7 : 2;
+    var niuCols = hasInUse ? 2 : 7;
+    var rtCols  = 2;
+
+    var wrapClass = hasInUse ? 'sections-wrap layout-active' : 'sections-wrap layout-idle';
     var sum = '<div class="summary-bar">'
       + si('#66bb6a', inUse.length  + ' In Use')
       + si('#ffee58', idle.length   + ' Not In Use')
       + si('#ef5350', redtag.length + ' Red Tagged')
       + si('#4fc3f7', filtered.length + ' Total' + fl)
       + '</div>';
-    var wrap = '<div class="sections-wrap">'
-      + '<div class="section-block" style="width:' + iuW + 'px">'
+       var wrap = '<div class="' + wrapClass + '">'
+      + '<div class="section-block" style="--cols:' + iuCols + '">'
       + buildSection('green',  'IN USE TODAY', inUse,  buildInUseCard)
       + '</div>'
-      + '<div class="section-block" style="width:' + niuW + 'px">'
+      + '<div class="section-block" style="--cols:' + niuCols + '">'
       + buildSection('yellow', 'NOT IN USE',   idle,   buildIdleCard)
       + '</div>'
-      + '<div class="section-block" style="width:' + rtW + 'px">'
+      + '<div class="section-block" style="--cols:' + rtCols + '">'
       + buildSection('red',    'RED TAGGED',   redtag, buildRedTagCard)
       + '</div>'
       + '</div>';
