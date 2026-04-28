@@ -54,18 +54,10 @@
   grid-template-columns: 2fr 7fr 2fr;
 }
 
-.sections-wrap.layout-active {
-  grid-template-columns: 7fr 2fr 2fr;
-}
-
 .section-block {
   min-width: 0;
   display: flex;
   flex-direction: column;
-}
-
-.card-grid {
-  grid-template-columns: repeat(var(--cols), minmax(0, 1fr));
 }
 
 .truck-card {
@@ -389,25 +381,25 @@
     var fl = af ? ' - ' + af + 's' : '';
     var hasInUse = inUse.length > 0;
 
-    var iuCols  = hasInUse ? 7 : 2;
-    var niuCols = hasInUse ? 2 : 7;
-    var rtCols  = 2;
-
-    var wrapClass = hasInUse ? 'sections-wrap layout-active' : 'sections-wrap layout-idle';
+    var iuCols   = Math.min(inUse.length || 1, 12);
+    var iuPx     = iuCols * 165 + 9;
+    var wrapAttr = hasInUse
+      ? 'class="sections-wrap" style="grid-template-columns:' + iuPx + 'px 339px 339px"'
+      : 'class="sections-wrap layout-idle"';
     var sum = '<div class="summary-bar">'
       + si('#66bb6a', inUse.length  + ' In Use')
       + si('#ffee58', idle.length   + ' Not In Use')
       + si('#ef5350', redtag.length + ' Red Tagged')
       + si('#4fc3f7', filtered.length + ' Total' + fl)
       + '</div>';
-       var wrap = '<div class="' + wrapClass + '">'
-      + '<div class="section-block" style="--cols:' + iuCols + '">'
+    var wrap = '<div ' + wrapAttr + '>'
+      + '<div class="section-block">'
       + buildSection('green',  'IN USE TODAY', inUse,  buildInUseCard)
       + '</div>'
-      + '<div class="section-block" style="--cols:' + niuCols + '">'
+      + '<div class="section-block">'
       + buildSection('yellow', 'NOT IN USE',   idle,   buildIdleCard)
       + '</div>'
-      + '<div class="section-block" style="--cols:' + rtCols + '">'
+      + '<div class="section-block">'
       + buildSection('red',    'RED TAGGED',   redtag, buildRedTagCard)
       + '</div>'
       + '</div>';
