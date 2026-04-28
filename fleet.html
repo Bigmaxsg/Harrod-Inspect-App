@@ -270,8 +270,10 @@
       _activeTab = _lockedLoc;
       if (_lockedType) _typeFilters[_lockedLoc] = _lockedType;
       document.getElementById('tab-bar').style.display = 'none';
+      var lockedTypes = _lockedType ? _lockedType.split(',').map(function(s){return s.trim();}) : [];
       var titleParts = [_lockedLoc];
-      if (_lockedType) titleParts.push(_lockedType + 's');
+      if (lockedTypes.length === 1) titleParts.push(lockedTypes[0] + 's');
+      else if (lockedTypes.length > 1) titleParts.push(lockedTypes.map(function(s){return s+'s';}).join(' & '));
       document.querySelector('#top-bar h1 span').textContent = titleParts.join(' — ');
     }
     loadFleetData();
@@ -381,9 +383,10 @@
     var inner = pane.querySelector('.pane-inner');
     if (!inner) return;
     var af = _typeFilters[loc] || '';
+    var afTypes = af ? af.split(',').map(function(s){return s.trim().toLowerCase();}) : [];
     var lt = _allTrucks.filter(function(t) { return t.location === loc; });
-    var filtered = !af ? lt : lt.filter(function(t) {
-      return (t.type || '').trim().toLowerCase() === af.toLowerCase();
+    var filtered = afTypes.length === 0 ? lt : lt.filter(function(t) {
+      return afTypes.indexOf((t.type || '').trim().toLowerCase()) !== -1;
     });
     var inUse  = sortTrucks(filtered.filter(function(t) { return t.status === 'in_use'; }));
     var idle   = sortTrucks(filtered.filter(function(t) { return t.status === 'not_in_use'; }));
