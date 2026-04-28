@@ -198,6 +198,12 @@
     .correction-item { display: flex; align-items: flex-start; gap: 7px; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.78rem; color: #cdd5e0; }
     .correction-item:last-child { border-bottom: none; }
     .correction-icon { font-size: 0.8rem; flex-shrink: 0; margin-top: 1px; }
+    .defect-label-list { margin: 6px 0 0 4px; padding: 0; list-style: none; }
+    .defect-label-list li { font-size: 0.77rem; color: #cdd5e0; padding: 2px 0; line-height: 1.4; }
+    .defect-label-list li::before { content: "– "; color: #6b90b8; }
+    .defect-driver-note { font-size: 0.73rem; color: #8fa8c8; font-style: italic; margin-top: 6px; padding-left: 2px; }
+    .corrections-summary { margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; }
+    .correction-summary-line { font-size: 0.75rem; color: #a5d6a7; padding: 2px 0; }
     .disposition-tag { display: inline-block; padding: 2px 8px; border-radius: 8px; font-size: 0.7rem; font-weight: 700; margin-top: 6px; }
     .disposition-tag.corrected { background: #1b3d1e; color: #a5d6a7; }
     .disposition-tag.open { background: #3e1010; color: #ef9a9a; }
@@ -531,24 +537,35 @@ var statusHtml = '';
       var defectBody='';
       if (!tripRec.hasDefects) {
         defectBody='<div class="defect-none">No defects reported</div>';
-      } else if (allFixed) {
-        defectBody='<div class="defect-item"><div class="defect-dot defect-fixed-dot"></div><div style="color:#a5d6a7;font-weight:600">All defects fixed mid-day</div></div>';
       } else {
-        var showCount = openCount !== null ? openCount : tripRec.defectCount;
-        defectBody='<div class="defect-item"><div class="defect-dot"></div><div>'+esc(showCount+' open defect(s)')+(tripRec.defectsNotes?'<br><span style="color:#8fa8c8;font-size:0.75rem">'+esc(tripRec.defectsNotes)+'</span>':'')+'</div></div>';
-      }
-      if (corrections.length > 0) {
-        defectBody+='<div style="margin-top:8px;border-top:1px solid rgba(255,255,255,0.06);padding-top:8px">';
-        corrections.forEach(function(c) {
-          defectBody+='<div class="correction-item"><span class="correction-icon">🔧</span><div>'
-            +'<span style="font-weight:700;color:#a5d6a7">'+esc(c.correctorName)+'</span>'
-            +(c.correctorRole?' <span style="color:#6b90b8;font-size:0.72rem">('+esc(c.correctorRole)+')</span>':'')
-            +'<br><span style="color:#8fa8c8;font-size:0.72rem">'+esc(c.defectsCorrected+' defect(s) fixed')
-            +(c.correctedAt?' · '+esc(fmtDateTime(c.correctedAt)):'')+'</span>'
-            +(c.notes?'<br><span style="color:#8fa8c8;font-size:0.72rem">'+esc(c.notes)+'</span>':'')
-            +'</div></div>';
-        });
-        defectBody+='</div>';
+        // Badge line
+        if (allFixed) {
+          defectBody='<div class="defect-item"><div class="defect-dot defect-fixed-dot"></div><div style="color:#a5d6a7;font-weight:600">🔧 All Fixed Mid-Day</div></div>';
+        } else {
+          var showCount = openCount !== null ? openCount : tripRec.defectCount;
+          defectBody='<div class="defect-item"><div class="defect-dot"></div><div style="font-weight:600">'+esc(showCount+' open defect(s)')+'</div></div>';
+        }
+        // Individual defect labels
+        var labels = Array.isArray(tripRec.defectLabels) ? tripRec.defectLabels : [];
+        if (labels.length > 0) {
+          defectBody+='<ul class="defect-label-list">';
+          labels.forEach(function(lbl) { defectBody+='<li>'+esc(lbl)+'</li>'; });
+          defectBody+='</ul>';
+        }
+        // Driver note
+        if (tripRec.defectsNotes) {
+          defectBody+='<div class="defect-driver-note">'+esc(tripRec.defectsNotes)+'</div>';
+        }
+        // Corrections summary — one compact line per entry
+        if (corrections.length > 0) {
+          defectBody+='<div class="corrections-summary">';
+          corrections.forEach(function(c) {
+            defectBody+='<div class="correction-summary-line">🔧 '+esc(c.defectsCorrected+' fixed mid-day by '+c.correctorName)
+              +(c.correctorRole?' <span style="color:#6b90b8;font-size:0.7rem">('+esc(c.correctorRole)+')</span>':'')
+              +'</div>';
+          });
+          defectBody+='</div>';
+        }
       }
       body+='<div class="drawer-section"><div class="drawer-section-title">'+(t.status==='in_use'?'Current Pre-Trip':'Last Trip Inspection')+'</div>'+defectBody+'</div>';
     }
