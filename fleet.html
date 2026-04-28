@@ -42,11 +42,8 @@
     .summary-bar { display: flex; gap: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 14px; margin-bottom: 10px; flex-wrap: wrap; }
     .summary-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; }
     .summary-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .sections-wrap { display: flex; gap: 12px; align-items: flex-start; min-width: 0; }
-    .section-block { min-width: 0; display: flex; flex-direction: column; }
-    .section-inuse  { flex: 1 1 0; }
-    .section-idle   { flex: 1 1 0; }
-    .section-redtag { flex: 0 0 338px; width: 338px; }
+    .sections-wrap { display: flex; gap: 12px; align-items: flex-start; overflow-x: auto; }
+    .section-block { flex: 0 0 auto; display: flex; flex-direction: column; }
     .section-header { display: flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 8px 8px 0 0; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; }
     .section-header.green  { background: #1b3d1e; color: #a5d6a7; border-bottom: 2px solid #2e7d32; }
     .section-header.yellow { background: #3d3000; color: #fff176; border-bottom: 2px solid #f9a825; }
@@ -149,7 +146,7 @@
   </div>
   <div id="top-bar-right">
     <div id="refresh-info">
-      <span id="last-updated">Loading…</span>
+      <span id="last-updated">Loading...</span>
       <span id="next-refresh"></span>
     </div>
     <button id="refresh-btn" onclick="manualRefresh()">
@@ -159,11 +156,11 @@
   </div>
 </div>
 <div id="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('Frankfort',this)">&#x1F4CD; Frankfort <span class="tab-count" id="tc-Frankfort">–</span></button>
-  <button class="tab-btn" onclick="switchTab('Lexington',this)">&#x1F4CD; Lexington <span class="tab-count" id="tc-Lexington">–</span></button>
+  <button class="tab-btn active" onclick="switchTab('Frankfort',this)">&#x1F4CD; Frankfort <span class="tab-count" id="tc-Frankfort">-</span></button>
+  <button class="tab-btn" onclick="switchTab('Lexington',this)">&#x1F4CD; Lexington <span class="tab-count" id="tc-Lexington">-</span></button>
 </div>
 <div id="main-content" style="padding:12px 16px;">
-  <div id="loading-overlay"><div class="spinner"></div><div class="loading-txt">Loading fleet data…</div></div>
+  <div id="loading-overlay"><div class="spinner"></div><div class="loading-txt">Loading fleet data...</div></div>
   <div id="error-msg"></div>
   <div id="panes"></div>
 </div>
@@ -171,10 +168,10 @@
 <div id="drawer">
   <div id="drawer-header">
     <div>
-      <div id="drawer-title">Truck #—</div>
+      <div id="drawer-title">Truck #-</div>
       <div id="drawer-subtitle"></div>
     </div>
-    <button id="drawer-close" onclick="closeDrawer()">✕</button>
+    <button id="drawer-close" onclick="closeDrawer()">X</button>
   </div>
   <div id="drawer-body"></div>
 </div>
@@ -191,7 +188,7 @@
     if (_isLoading) return;
     _isLoading = true;
     document.getElementById('refresh-btn').classList.add('spinning');
-    document.getElementById('last-updated').textContent = 'Refreshing…';
+    document.getElementById('last-updated').textContent = 'Refreshing...';
     fetch(GAS_URL + '?action=fleetData')
       .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function(data) {
@@ -210,7 +207,7 @@
         document.getElementById('loading-overlay').style.display = 'none';
         var em = document.getElementById('error-msg');
         em.style.display = 'block';
-        em.textContent = '⚠ Could not load fleet data: ' + err.message;
+        em.textContent = 'Could not load fleet data: ' + err.message;
         scheduleNextRefresh();
       });
   }
@@ -247,7 +244,6 @@
     });
   }
   function setTypeFilter(loc, type) {
-    // Toggle: clicking active filter clears it
     _typeFilters[loc] = (_typeFilters[loc] === type) ? '' : type;
     renderPane(loc);
     var af = _typeFilters[loc];
@@ -275,7 +271,7 @@
       var fb = '<div class="type-filter-bar"><span class="filter-label">Filter by type:</span>';
       TRUCK_TYPES.forEach(function(type) {
         var a = (_typeFilters[loc] || '') === type;
-        fb += '<button class="type-btn' + (a ? ' active' : '') + '" data-type="' + esc(type) + '" onclick="setTypeFilter(\''+esc(loc)+'\',\''+esc(type)+'\')">'+esc(type)+'</button>';
+        fb += '<button class="type-btn' + (a ? ' active' : '') + '" data-type="' + esc(type) + '" onclick="setTypeFilter(\'' + esc(loc) + '\',\'' + esc(type) + '\')">' + esc(type) + '</button>';
       });
       fb += '</div>';
       pane.innerHTML = fb + '<div class="pane-inner"></div>';
@@ -296,38 +292,45 @@
     var inUse  = sortTrucks(filtered.filter(function(t) { return t.status === 'in_use'; }));
     var idle   = sortTrucks(filtered.filter(function(t) { return t.status === 'not_in_use'; }));
     var redtag = sortTrucks(filtered.filter(function(t) { return t.status === 'red_tagged'; }));
-    var fl = af ? ' — ' + af + 's' : '';
-    var inGrow = Math.max(inUse.length, 2);
-    var idGrow = Math.max(idle.length, 2);
+    var fl = af ? ' - ' + af + 's' : '';
+    // Column widths: In Use grows 1 to 7 as trucks pre-trip, Not In Use shrinks from 8 to 2
+    // Each card slot = 158px + 7px gap; section padding = 8px each side
+    var iuCols = inUse.length === 0 ? 2 : Math.min(inUse.length, 7);
+    var niuCols = 9 - iuCols;
+    function colW(n) { return n * 158 + Math.max(n - 1, 0) * 7 + 16; }
+    var iuW  = colW(iuCols);
+    var niuW = colW(niuCols);
+    var rtW  = colW(2);
     var sum = '<div class="summary-bar">'
-      + si('#66bb6a', inUse.length + ' In Use')
-      + si('#ffee58', idle.length + ' Not In Use')
+      + si('#66bb6a', inUse.length  + ' In Use')
+      + si('#ffee58', idle.length   + ' Not In Use')
       + si('#ef5350', redtag.length + ' Red Tagged')
       + si('#4fc3f7', filtered.length + ' Total' + fl)
       + '</div>';
     var wrap = '<div class="sections-wrap">'
-      + '<div class="section-block section-inuse" style="flex:'+inGrow+' 1 0">'
-      + buildSection('green','IN USE TODAY',inUse,buildInUseCard)
+      + '<div class="section-block" style="width:' + iuW + 'px">'
+      + buildSection('green',  'IN USE TODAY', inUse,  buildInUseCard)
       + '</div>'
-      + '<div class="section-block section-idle" style="flex:'+idGrow+' 1 0">'
-      + buildSection('yellow','NOT IN USE',idle,buildIdleCard)
+      + '<div class="section-block" style="width:' + niuW + 'px">'
+      + buildSection('yellow', 'NOT IN USE',   idle,   buildIdleCard)
       + '</div>'
-      + '<div class="section-block section-redtag">'
-      + buildSection('red','RED TAGGED',redtag,buildRedTagCard)
-      + '</div></div>';
+      + '<div class="section-block" style="width:' + rtW + 'px">'
+      + buildSection('red',    'RED TAGGED',   redtag, buildRedTagCard)
+      + '</div>'
+      + '</div>';
     inner.innerHTML = sum + wrap;
   }
   function si(color, label) {
-    return '<div class="summary-item"><div class="summary-dot" style="background:'+color+';box-shadow:0 0 4px '+color+'"></div><span>'+esc(label)+'</span></div>';
+    return '<div class="summary-item"><div class="summary-dot" style="background:' + color + ';box-shadow:0 0 4px ' + color + '"></div><span>' + esc(label) + '</span></div>';
   }
   function buildSection(color, title, trucks, cardFn) {
-    var header = '<div class="section-header '+color+'"><div class="col-dot '+color+'"></div>'+esc(title)+'<span class="col-count">'+trucks.length+'</span></div>';
+    var header = '<div class="section-header ' + color + '"><div class="col-dot ' + color + '"></div>' + esc(title) + '<span class="col-count">' + trucks.length + '</span></div>';
     var body = trucks.length === 0 ? '<div class="col-empty">None right now</div>' : trucks.map(cardFn).join('');
     return header + '<div class="card-grid">' + body + '</div>';
   }
   function typeChip(type) {
     var s = (type||'').replace('Concrete Mixer','Mixer').replace('Dump Truck','Dump');
-    return '<span class="card-type-chip">'+esc(s)+'</span>';
+    return '<span class="card-type-chip">' + esc(s) + '</span>';
   }
   function driverRowHTML(name, photo, isAssigned, label) {
     var assigned = isAssigned === true, temp = isAssigned === false;
@@ -335,52 +338,70 @@
     var avCls = temp ? 'temp-av' : 'assigned-av';
     var initials = (name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
     var avatar = photo
-      ? '<div class="driver-mini-avatar '+avCls+'"><img src="'+photo+'" alt=""></div>'
-      : '<div class="driver-mini-avatar '+avCls+'">'+esc(initials)+'</div>';
-    var tempLine = temp ? '<span class="temp-flag">⚠ Temp Truck</span>' : '';
-    return '<div class="card-driver-row '+cls+'">'
-      +avatar+'<div class="driver-name-col"><div class="driver-name-text">'+esc(name)+'</div>'
-      +'<div class="driver-label-text">'+esc(label)+tempLine+'</div></div></div>';
+      ? '<div class="driver-mini-avatar ' + avCls + '"><img src="' + photo + '" alt=""></div>'
+      : '<div class="driver-mini-avatar ' + avCls + '">' + esc(initials) + '</div>';
+    var tempLine = temp ? '<span class="temp-flag">Temp Truck</span>' : '';
+    return '<div class="card-driver-row ' + cls + '">' + avatar
+      + '<div class="driver-name-col"><div class="driver-name-text">' + esc(name) + '</div>'
+      + '<div class="driver-label-text">' + esc(label) + tempLine + '</div></div></div>';
   }
   function buildInUseCard(t) {
-    var dr = t.currentDriver ? driverRowHTML(t.currentDriver,t.driverPhoto,t.driverAssigned,'Driver') : '';
-    var def = t.preTrip ? (t.preTrip.hasDefects ? '<div class="card-defect-warn">⚠ '+t.preTrip.defectCount+' defect(s)</div>' : '<div class="card-defect-ok">✓ No defects</div>') : '';
-    return '<div class="truck-card inuse" onclick="openDrawer(\''+esc(t.truckNumber)+'\')"><div class="card-num-row"><span class="card-num">#'+esc(t.truckNumber)+'</span>'+typeChip(t.type)+'</div><div class="card-make">'+esc(t.year+' '+t.make)+'</div><div class="card-status s-green"><div class="dot"></div>In Use Today</div>'+dr+def+'<div class="click-hint">tap for details ›</div></div>';
+    var dr = t.currentDriver ? driverRowHTML(t.currentDriver, t.driverPhoto, t.driverAssigned, 'Driver') : '';
+    var def = t.preTrip ? (t.preTrip.hasDefects ? '<div class="card-defect-warn"> ' + t.preTrip.defectCount + ' defect(s)</div>' : '<div class="card-defect-ok">No defects</div>') : '';
+    var thumb = t.frontThumb ? '<img src="' + t.frontThumb + '" style="width:100%;height:48px;object-fit:cover;border-radius:4px;margin-bottom:2px" alt="">' : '';
+    return '<div class="truck-card inuse" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
+      + thumb
+      + '<div class="card-num-row"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
+      + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
+      + '<div class="card-status s-green"><div class="dot"></div>In Use Today</div>'
+      + dr + def + '<div class="click-hint">tap for details</div></div>';
   }
   function buildIdleCard(t) {
-    var dr = t.lastDriver ? driverRowHTML(t.lastDriver,t.lastDriverPhoto,t.lastDriverAssigned,'Last Driver') : '';
-    var def = t.lastTrip ? (t.lastTrip.hasDefects ? '<div class="card-defect-warn">⚠ '+t.lastTrip.defectCount+' defect(s) last trip</div>' : '<div class="card-defect-ok">✓ No defects</div>') : '<div class="card-defect-ok">✓ No history yet</div>';
-    var lt = t.lastTripDate ? '<div class="card-last-trip">Last: '+esc(fmtDate(t.lastTripDate))+'</div>' : '';
-    return '<div class="truck-card idle" onclick="openDrawer(\''+esc(t.truckNumber)+'\')"><div class="card-num-row"><span class="card-num">#'+esc(t.truckNumber)+'</span>'+typeChip(t.type)+'</div><div class="card-make">'+esc(t.year+' '+t.make)+'</div><div class="card-status s-yellow"><div class="dot"></div>Not In Use</div>'+dr+def+lt+'<div class="click-hint">tap for details ›</div></div>';
+    var dr = t.lastDriver ? driverRowHTML(t.lastDriver, t.lastDriverPhoto, t.lastDriverAssigned, 'Last Driver') : '';
+    var def = t.lastTrip ? (t.lastTrip.hasDefects ? '<div class="card-defect-warn"> ' + t.lastTrip.defectCount + ' defect(s) last trip</div>' : '<div class="card-defect-ok">No defects</div>') : '<div class="card-defect-ok">No history yet</div>';
+    var lt = t.lastTripDate ? '<div class="card-last-trip">Last: ' + esc(fmtDate(t.lastTripDate)) + '</div>' : '';
+    var thumb = t.frontThumb ? '<img src="' + t.frontThumb + '" style="width:100%;height:48px;object-fit:cover;border-radius:4px;margin-bottom:2px" alt="">' : '';
+    return '<div class="truck-card idle" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
+      + thumb
+      + '<div class="card-num-row"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
+      + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
+      + '<div class="card-status s-yellow"><div class="dot"></div>Not In Use</div>'
+      + dr + def + lt + '<div class="click-hint">tap for details</div></div>';
   }
   function buildRedTagCard(t) {
-    var r = t.redTag ? '<div class="card-redtag-reason">🔴 '+esc(t.redTag.reason||'No reason given')+'</div>' : '';
-    var by = t.redTag ? '<div class="card-last-trip">By: '+esc(t.redTag.taggedBy)+'</div>' : '';
-    return '<div class="truck-card redtag" onclick="openDrawer(\''+esc(t.truckNumber)+'\')"><div class="card-num-row"><span class="card-num">#'+esc(t.truckNumber)+'</span>'+typeChip(t.type)+'</div><div class="card-make">'+esc(t.year+' '+t.make)+'</div><div class="card-status s-red"><div class="dot"></div>Red Tagged</div>'+r+by+'<div class="click-hint">tap for details ›</div></div>';
+    var r = t.redTag ? '<div class="card-redtag-reason"> ' + esc(t.redTag.reason || 'No reason given') + '</div>' : '';
+    var by = t.redTag ? '<div class="card-last-trip">By: ' + esc(t.redTag.taggedBy) + '</div>' : '';
+    var thumb = t.frontThumb ? '<img src="' + t.frontThumb + '" style="width:100%;height:48px;object-fit:cover;border-radius:4px;margin-bottom:2px" alt="">' : '';
+    return '<div class="truck-card redtag" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
+      + thumb
+      + '<div class="card-num-row"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
+      + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
+      + '<div class="card-status s-red"><div class="dot"></div>Red Tagged</div>'
+      + r + by + '<div class="click-hint">tap for details</div></div>';
   }
   function openDrawer(truckNum) {
     var t = _truckMap[truckNum];
     if (!t) return;
     document.getElementById('drawer-title').textContent = 'Truck #' + t.truckNumber;
-    document.getElementById('drawer-subtitle').textContent = t.year + ' ' + t.make + ' — ' + (t.type||'') + ' — ' + (t.location||'');
+    document.getElementById('drawer-subtitle').textContent = t.year + ' ' + t.make + ' - ' + (t.type||'') + ' - ' + (t.location||'');
     var body = '';
     var statusHtml = '';
     if (t.status==='in_use') statusHtml='<div class="drawer-status ds-green"><div class="dot"></div>In Use Today</div>';
     else if (t.status==='not_in_use') statusHtml='<div class="drawer-status ds-yellow"><div class="dot"></div>Not In Use</div>';
     else if (t.status==='red_tagged') statusHtml='<div class="drawer-status ds-red"><div class="dot"></div>Red Tagged</div>';
     body += '<div class="drawer-section"><div class="drawer-section-title">Truck Info</div>'
-      +'<div class="drawer-row"><span class="drawer-lbl">Truck #</span><span class="drawer-val bold">'+esc(t.truckNumber)+'</span></div>'
-      +'<div class="drawer-row"><span class="drawer-lbl">Year / Make</span><span class="drawer-val">'+esc(t.year+' '+t.make)+'</span></div>'
-      +'<div class="drawer-row"><span class="drawer-lbl">Type</span><span class="drawer-val">'+esc(t.type||'—')+'</span></div>'
-      +'<div class="drawer-row"><span class="drawer-lbl">Location</span><span class="drawer-val">'+esc(t.location||'—')+'</span></div>'
-      +(t.vin?'<div class="drawer-row"><span class="drawer-lbl">VIN</span><span class="drawer-val" style="font-size:0.75rem;word-break:break-all">'+esc(t.vin)+'</span></div>':'')
-      +'<div class="drawer-row"><span class="drawer-lbl">Status</span><span class="drawer-val">'+statusHtml+'</span></div></div>';
+      + '<div class="drawer-row"><span class="drawer-lbl">Truck #</span><span class="drawer-val bold">' + esc(t.truckNumber) + '</span></div>'
+      + '<div class="drawer-row"><span class="drawer-lbl">Year / Make</span><span class="drawer-val">' + esc(t.year + ' ' + t.make) + '</span></div>'
+      + '<div class="drawer-row"><span class="drawer-lbl">Type</span><span class="drawer-val">' + esc(t.type||'-') + '</span></div>'
+      + '<div class="drawer-row"><span class="drawer-lbl">Location</span><span class="drawer-val">' + esc(t.location||'-') + '</span></div>'
+      + (t.vin ? '<div class="drawer-row"><span class="drawer-lbl">VIN</span><span class="drawer-val" style="font-size:0.75rem;word-break:break-all">' + esc(t.vin) + '</span></div>' : '')
+      + '<div class="drawer-row"><span class="drawer-lbl">Status</span><span class="drawer-val">' + statusHtml + '</span></div></div>';
     if (t.status==='in_use' && t.currentDriver) {
       var isTemp=t.driverAssigned===false, isAssigned=t.driverAssigned===true;
       var avCls=isTemp?'temp-av':'assigned-av';
       var initials=t.currentDriver.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
       var avHtml=t.driverPhoto?'<div class="drawer-avatar '+avCls+'"><img src="'+t.driverPhoto+'" alt=""></div>':'<div class="drawer-avatar '+avCls+'">'+esc(initials)+'</div>';
-      var pillHtml=isTemp?'<span class="assign-pill temp">⚠ Temporary Assignment</span>':(isAssigned?'<span class="assign-pill assigned">✓ Assigned Truck</span>':'');
+      var pillHtml=isTemp?'<span class="assign-pill temp">Temporary Assignment</span>':(isAssigned?'<span class="assign-pill assigned">Assigned Truck</span>':'');
       body+='<div class="drawer-section"><div class="drawer-section-title">Current Driver</div><div class="drawer-driver-card '+(isTemp?'temp-card':'assigned-card')+'">'+avHtml+'<div class="drawer-driver-info"><div class="drawer-driver-name">'+esc(t.currentDriver)+'</div><div class="drawer-driver-meta">Driving today</div>'+pillHtml+'</div></div></div>';
     }
     if (t.lastDriver) {
@@ -388,25 +409,24 @@
       var lAvCls=lTemp?'temp-av':'assigned-av';
       var lInitials=t.lastDriver.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
       var lAvHtml=t.lastDriverPhoto?'<div class="drawer-avatar '+lAvCls+'"><img src="'+t.lastDriverPhoto+'" alt=""></div>':'<div class="drawer-avatar '+lAvCls+'">'+esc(lInitials)+'</div>';
-      var lPillHtml=lTemp?'<span class="assign-pill temp">⚠ Was Temporary</span>':(lAssigned?'<span class="assign-pill assigned">✓ Assigned Truck</span>':'');
+      var lPillHtml=lTemp?'<span class="assign-pill temp">Was Temporary</span>':(lAssigned?'<span class="assign-pill assigned">Assigned Truck</span>':'');
       var lDateLine=t.lastTripDate?'<div class="drawer-driver-meta">Last trip: '+esc(fmtDate(t.lastTripDate))+'</div>':'';
       body+='<div class="drawer-section"><div class="drawer-section-title">'+(t.status==='in_use'?'Previous Driver':'Last Driver')+'</div><div class="drawer-driver-card '+(lTemp?'temp-card':'assigned-card')+'">'+lAvHtml+'<div class="drawer-driver-info"><div class="drawer-driver-name">'+esc(t.lastDriver)+'</div>'+lDateLine+lPillHtml+'</div></div></div>';
     }
     var tripRec = t.status==='in_use' ? t.preTrip : t.lastTrip;
     if (tripRec) {
       var fixed=(tripRec.disposition||'').toLowerCase()==='corrected';
-      var dispTag=tripRec.hasDefects?(fixed?'<span class="disposition-tag corrected">✓ Defects Corrected Before Departure</span>':'<span class="disposition-tag open">⚠ Defects Not Yet Corrected</span>'):'';
+      var dispTag=tripRec.hasDefects?(fixed?'<span class="disposition-tag corrected">Defects Corrected</span>':'<span class="disposition-tag open">Defects Not Corrected</span>'):'';
       var defectBody='';
       if (!tripRec.hasDefects) {
-        defectBody='<div class="defect-none">No defects reported on '+(t.status==='in_use'?'current pre-trip':'last trip')+'</div>';
+        defectBody='<div class="defect-none">No defects reported</div>';
       } else {
-        defectBody+='<div class="defect-item"><div class="defect-dot '+(fixed?'defect-fixed-dot':'')+'"></div><div>'+esc(tripRec.defectCount+' item(s) flagged as defective')+(tripRec.defectsNotes?'<br><span style="color:#8fa8c8;font-size:0.75rem">'+esc(tripRec.defectsNotes)+'</span>':'')+'</div></div>';
-        defectBody+=dispTag;
+        defectBody+='<div class="defect-item"><div class="defect-dot '+(fixed?'defect-fixed-dot':'')+'"></div><div>'+esc(tripRec.defectCount+' item(s) flagged')+(tripRec.defectsNotes?'<br><span style="color:#8fa8c8;font-size:0.75rem">'+esc(tripRec.defectsNotes)+'</span>':'')+'</div></div>'+dispTag;
       }
       body+='<div class="drawer-section"><div class="drawer-section-title">'+(t.status==='in_use'?'Current Pre-Trip':'Last Trip Inspection')+'</div>'+defectBody+'</div>';
     }
     if (t.redTag) {
-      body+='<div class="drawer-section"><div class="drawer-section-title">Red Tag Details</div><div class="redtag-detail-box"><div class="redtag-detail-reason">🔴 '+esc(t.redTag.reason||'No reason specified')+'</div><div class="redtag-detail-meta">Tagged by: <strong>'+esc(t.redTag.taggedBy)+'</strong>'+(t.redTag.taggedByRole?' ('+esc(t.redTag.taggedByRole)+')':'')+'</div>'+(t.redTag.taggedAt?'<div class="redtag-detail-meta" style="margin-top:4px">Tagged: '+esc(fmtDateTime(t.redTag.taggedAt))+'</div>':'')+'</div><div style="margin-top:10px;font-size:0.78rem;color:#ef9a9a;font-weight:600">This truck is out of service until the red tag is resolved.</div></div>';
+      body+='<div class="drawer-section"><div class="drawer-section-title">Red Tag Details</div><div class="redtag-detail-box"><div class="redtag-detail-reason"> '+esc(t.redTag.reason||'No reason specified')+'</div><div class="redtag-detail-meta">Tagged by: <strong>'+esc(t.redTag.taggedBy)+'</strong>'+(t.redTag.taggedByRole?' ('+esc(t.redTag.taggedByRole)+')':'')+'</div>'+(t.redTag.taggedAt?'<div class="redtag-detail-meta" style="margin-top:4px">Tagged: '+esc(fmtDateTime(t.redTag.taggedAt))+'</div>':'')+'</div><div style="margin-top:10px;font-size:0.78rem;color:#ef9a9a;font-weight:600">Out of service until red tag is resolved.</div></div>';
     }
     if (t.notes) {
       body+='<div class="drawer-section"><div class="drawer-section-title">Truck Notes</div><div style="font-size:0.82rem;color:#cdd5e0">'+esc(t.notes)+'</div></div>';
