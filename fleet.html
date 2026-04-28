@@ -497,7 +497,7 @@
     var thumb = t.frontThumb ? '<div class="card-front-thumb"><img src="' + t.frontThumb + '" alt=""></div>' : '';
     var adminUpdate = '';
     if (t.redTag && Array.isArray(t.redTag.adminUpdates) && t.redTag.adminUpdates.length > 0) {
-      var latest = t.redTag.adminUpdates[0];
+      var latest = t.redTag.adminUpdates[t.redTag.adminUpdates.length - 1];
       var earlier = t.redTag.adminUpdates.length - 1;
       adminUpdate = '<div class="card-admin-update">'
         + '<div class="card-admin-update-header">💬 ' + esc(latest.by) + (latest.at ? ' · ' + esc(fmtDate(latest.at)) : '') + '</div>'
