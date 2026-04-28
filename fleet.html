@@ -87,28 +87,42 @@
     .truck-card.inuse  { border-left-color: #43a047; }
     .truck-card.idle   { border-left-color: #f9a825; }
     .truck-card.redtag { border-left-color: #ef5350; }
-    .card-top-row {
+   .card-top-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 6px;
+  width: 100%;
 }
 
 .card-num-wrap {
   display: flex;
-  align-items: baseline;
-  gap: 4px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
   min-width: 0;
   flex: 1;
+  z-index: 2;
 }
 
 .card-front-thumb {
-  width: 46px;
-  height: 34px;
-  object-fit: cover;
-  border-radius: 5px;
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  max-width: 42px !important;
+  border-radius: 6px;
+  overflow: hidden;
   border: 1px solid #d5dde8;
-  flex-shrink: 0;
+  background: #eef3f8;
+  flex: 0 0 42px;
+}
+
+.card-front-thumb img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  object-position: center center;
+  display: block;
 }
     .card-num { font-size: 1.12rem; font-weight: 900; color: #0d2a5e; line-height: 1; }
     .card-type-chip { font-size: 0.59rem; font-weight: 700; padding: 2px 5px; border-radius: 7px; background: #e8edf8; color: #3a5a8c; flex-shrink: 0; white-space: nowrap; }
@@ -396,7 +410,7 @@
   function buildInUseCard(t) {
     var dr = t.currentDriver ? driverRowHTML(t.currentDriver, t.driverPhoto, t.driverAssigned, 'Driver') : '';
     var def = t.preTrip ? (t.preTrip.hasDefects ? '<div class="card-defect-warn"> ' + t.preTrip.defectCount + ' defect(s)</div>' : '<div class="card-defect-ok">No defects</div>') : '';
-    var thumb = t.frontThumb ? '<img class="card-front-thumb" src="' + t.frontThumb + '" alt="">' : '';
+    var thumb = t.frontThumb ? '<div class="card-front-thumb"><img src="' + t.frontThumb + '" alt=""></div>' : '';
     return '<div class="truck-card inuse" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
       + '<div class="card-top-row">'
 + '<div class="card-num-wrap"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
@@ -410,7 +424,7 @@
     var dr = t.lastDriver ? driverRowHTML(t.lastDriver, t.lastDriverPhoto, t.lastDriverAssigned, 'Last Driver') : '';
     var def = t.lastTrip ? (t.lastTrip.hasDefects ? '<div class="card-defect-warn"> ' + t.lastTrip.defectCount + ' defect(s) last trip</div>' : '<div class="card-defect-ok">No defects</div>') : '<div class="card-defect-ok">No history yet</div>';
     var lt = t.lastTripDate ? '<div class="card-last-trip">Last: ' + esc(fmtDate(t.lastTripDate)) + '</div>' : '';
-    var thumb = t.frontThumb ? '<img src="' + t.frontThumb + '" style="width:100%;height:48px;object-fit:cover;border-radius:4px;margin-bottom:2px" alt="">' : '';
+    var thumb = t.frontThumb ? '<div class="card-front-thumb"><img src="' + t.frontThumb + '" alt=""></div>' : '';
     return '<div class="truck-card idle" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
      + '<div class="card-top-row">'
 + '<div class="card-num-wrap"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
@@ -423,7 +437,7 @@
   function buildRedTagCard(t) {
     var r = t.redTag ? '<div class="card-redtag-reason"> ' + esc(t.redTag.reason || 'No reason given') + '</div>' : '';
     var by = t.redTag ? '<div class="card-last-trip">By: ' + esc(t.redTag.taggedBy) + '</div>' : '';
-    var thumb = t.frontThumb ? '<img src="' + t.frontThumb + '" style="width:100%;height:48px;object-fit:cover;border-radius:4px;margin-bottom:2px" alt="">' : '';
+    var thumb = t.frontThumb ? '<div class="card-front-thumb"><img src="' + t.frontThumb + '" alt=""></div>' : '';
     return '<div class="truck-card redtag" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
      + '<div class="card-top-row">'
 + '<div class="card-num-wrap"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
