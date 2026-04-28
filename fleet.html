@@ -469,9 +469,10 @@
     document.getElementById('drawer-subtitle').textContent = t.year + ' ' + t.make + ' - ' + (t.type||'') + ' - ' + (t.location||'');
     var body = '';
 
-if (t.frontThumb) {
+var drawerPhotoSrc = driveImgUrl(t.photoFrontLink) || t.frontThumb || null;
+if (drawerPhotoSrc) {
   body += '<div class="drawer-truck-photo-wrap">'
-    + '<img class="drawer-truck-photo" src="' + t.frontThumb + '" alt="Truck #' + esc(t.truckNumber) + '">'
+    + '<img class="drawer-truck-photo" src="' + drawerPhotoSrc + '" alt="Truck #' + esc(t.truckNumber) + '">'
     + '</div>';
 }
 
@@ -534,6 +535,11 @@ var statusHtml = '';
   document.addEventListener('keydown', function(e) { if (e.key==='Escape') closeDrawer(); });
   function esc(s) {
     return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+  function driveImgUrl(link) {
+    if (!link) return null;
+    var m = link.match(/\/d\/([a-zA-Z0-9_-]+)/) || link.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    return m ? 'https://lh3.googleusercontent.com/d/' + m[1] : null;
   }
   function fmtTime(d) { var h=d.getHours(),m=d.getMinutes(),ap=h<12?'AM':'PM'; h=h%12||12; return h+':'+(m<10?'0':'')+m+' '+ap; }
   function fmtDate(iso) { if(!iso)return''; var d=new Date(iso+'T00:00:00'); if(isNaN(d))return iso; return (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2); }
