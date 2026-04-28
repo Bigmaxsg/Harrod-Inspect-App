@@ -182,9 +182,9 @@
   var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec';
   var REFRESH_INTERVAL = 2 * 60 * 1000;
   var LOCATIONS   = ['Frankfort', 'Lexington'];
-  var TRUCK_TYPES = ['All', 'Concrete Mixer', 'Dump Truck', 'Tractor'];
+  var TRUCK_TYPES = ['Concrete Mixer', 'Dump Truck', 'Tractor'];
   var _allTrucks = [], _truckMap = {}, _activeTab = 'Frankfort';
-  var _typeFilters = { 'Frankfort': 'All', 'Lexington': 'All' };
+  var _typeFilters = { 'Frankfort': '', 'Lexington': '' };
   var _refreshTimer = null, _countdownTimer = null, _nextRefreshAt = null, _isLoading = false;
   window.addEventListener('load', function() { loadFleetData(); });
   function loadFleetData() {
@@ -247,11 +247,13 @@
     });
   }
   function setTypeFilter(loc, type) {
-    _typeFilters[loc] = type;
+    // Toggle: clicking active filter clears it
+    _typeFilters[loc] = (_typeFilters[loc] === type) ? '' : type;
     renderPane(loc);
+    var af = _typeFilters[loc];
     var pane = document.getElementById('pane-' + safeCssId(loc));
     if (pane) pane.querySelectorAll('.type-btn').forEach(function(b) {
-      b.classList.toggle('active', b.dataset.type === type);
+      b.classList.toggle('active', b.dataset.type === af);
     });
   }
   function renderAll(trucks) {
@@ -272,7 +274,7 @@
       pane.id = 'pane-' + safeCssId(loc);
       var fb = '<div class="type-filter-bar"><span class="filter-label">Filter by type:</span>';
       TRUCK_TYPES.forEach(function(type) {
-        var a = (_typeFilters[loc] || 'All') === type;
+        var a = (_typeFilters[loc] || '') === type;
         fb += '<button class="type-btn' + (a ? ' active' : '') + '" data-type="' + esc(type) + '" onclick="setTypeFilter(\''+esc(loc)+'\',\''+esc(type)+'\')">'+esc(type)+'</button>';
       });
       fb += '</div>';
@@ -286,15 +288,15 @@
     if (!pane) return;
     var inner = pane.querySelector('.pane-inner');
     if (!inner) return;
-    var af = _typeFilters[loc] || 'All';
+    var af = _typeFilters[loc] || '';
     var lt = _allTrucks.filter(function(t) { return t.location === loc; });
-    var filtered = af === 'All' ? lt : lt.filter(function(t) {
+    var filtered = !af ? lt : lt.filter(function(t) {
       return (t.type || '').trim().toLowerCase() === af.toLowerCase();
     });
     var inUse  = sortTrucks(filtered.filter(function(t) { return t.status === 'in_use'; }));
     var idle   = sortTrucks(filtered.filter(function(t) { return t.status === 'not_in_use'; }));
     var redtag = sortTrucks(filtered.filter(function(t) { return t.status === 'red_tagged'; }));
-    var fl = af === 'All' ? '' : ' — ' + af + 's';
+    var fl = af ? ' — ' + af + 's' : '';
     var inGrow = Math.max(inUse.length, 2);
     var idGrow = Math.max(idle.length, 2);
     var sum = '<div class="summary-bar">'
