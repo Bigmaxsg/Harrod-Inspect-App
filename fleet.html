@@ -261,7 +261,20 @@
   var _allTrucks = [], _truckMap = {}, _activeTab = 'Frankfort';
   var _typeFilters = { 'Frankfort': '', 'Lexington': '' };
   var _refreshTimer = null, _countdownTimer = null, _nextRefreshAt = null, _isLoading = false;
-  window.addEventListener('load', function() { loadFleetData(); });
+  var _params      = new URLSearchParams(window.location.search);
+  var _lockedLoc   = (_params.get('location') || '').trim();
+  var _lockedType  = (_params.get('type')     || '').trim();
+  window.addEventListener('load', function() {
+    if (_lockedLoc) {
+      _activeTab = _lockedLoc;
+      if (_lockedType) _typeFilters[_lockedLoc] = _lockedType;
+      document.getElementById('tab-bar').style.display = 'none';
+      var titleParts = [_lockedLoc];
+      if (_lockedType) titleParts.push(_lockedType + 's');
+      document.querySelector('#top-bar h1 span').textContent = titleParts.join(' — ');
+    }
+    loadFleetData();
+  });
   function loadFleetData() {
     if (_isLoading) return;
     _isLoading = true;
@@ -342,16 +355,20 @@
     });
     var panesEl = document.getElementById('panes');
     panesEl.innerHTML = '';
-    LOCATIONS.forEach(function(loc) {
+    var locsToRender = _lockedLoc ? LOCATIONS.filter(function(l) { return l === _lockedLoc; }) : LOCATIONS;
+    locsToRender.forEach(function(loc) {
       var pane = document.createElement('div');
       pane.className = 'location-pane' + (loc === _activeTab ? ' active' : '');
       pane.id = 'pane-' + safeCssId(loc);
-      var fb = '<div class="type-filter-bar"><span class="filter-label">Filter by type:</span>';
-      TRUCK_TYPES.forEach(function(type) {
-        var a = (_typeFilters[loc] || '') === type;
-        fb += '<button class="type-btn' + (a ? ' active' : '') + '" data-type="' + esc(type) + '" onclick="setTypeFilter(\'' + esc(loc) + '\',\'' + esc(type) + '\')">' + esc(type) + '</button>';
-      });
-      fb += '</div>';
+      var fb = '';
+      if (!_lockedType) {
+        fb = '<div class="type-filter-bar"><span class="filter-label">Filter by type:</span>';
+        TRUCK_TYPES.forEach(function(type) {
+          var a = (_typeFilters[loc] || '') === type;
+          fb += '<button class="type-btn' + (a ? ' active' : '') + '" data-type="' + esc(type) + '" onclick="setTypeFilter(\'' + esc(loc) + '\',\'' + esc(type) + '\')">' + esc(type) + '</button>';
+        });
+        fb += '</div>';
+      }
       pane.innerHTML = fb + '<div class="pane-inner"></div>';
       panesEl.appendChild(pane);
       renderPane(loc);
