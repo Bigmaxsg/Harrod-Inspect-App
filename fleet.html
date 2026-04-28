@@ -140,6 +140,10 @@
     .card-redtag-reason { font-size: 0.62rem; color: #c62828; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-last-trip { font-size: 0.59rem; color: #7a8fa8; }
     .click-hint { font-size: 0.57rem; color: #aab8cc; text-align: right; margin-top: 1px; }
+    .card-admin-update { background: rgba(245,124,0,0.12); border: 1px solid rgba(245,124,0,0.3); border-radius: 5px; padding: 4px 6px; margin-top: 3px; }
+    .card-admin-update-header { font-size: 0.58rem; font-weight: 700; color: #fb8c00; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-admin-update-comment { font-size: 0.62rem; color: #ffcc80; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+    .card-admin-update-more { font-size: 0.55rem; color: #f57c00; margin-top: 2px; }
     #drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; }
     #drawer-backdrop.open { display: block; }
     #drawer { position: fixed; top: 0; right: -440px; width: 420px; max-width: 96vw; height: 100vh; background: #0e1a2e; border-left: 2px solid #2a4a7f; z-index: 301; overflow-y: auto; transition: right 0.3s ease; box-shadow: -4px 0 24px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
@@ -491,6 +495,16 @@
     var r = t.redTag ? '<div class="card-redtag-reason"> ' + esc(t.redTag.reason || 'No reason given') + '</div>' : '';
     var by = t.redTag ? '<div class="card-last-trip">By: ' + esc(t.redTag.taggedBy) + '</div>' : '';
     var thumb = t.frontThumb ? '<div class="card-front-thumb"><img src="' + t.frontThumb + '" alt=""></div>' : '';
+    var adminUpdate = '';
+    if (t.redTag && Array.isArray(t.redTag.adminUpdates) && t.redTag.adminUpdates.length > 0) {
+      var latest = t.redTag.adminUpdates[0];
+      var earlier = t.redTag.adminUpdates.length - 1;
+      adminUpdate = '<div class="card-admin-update">'
+        + '<div class="card-admin-update-header">💬 ' + esc(latest.by) + (latest.at ? ' · ' + esc(fmtDate(latest.at)) : '') + '</div>'
+        + '<div class="card-admin-update-comment">' + esc(latest.comment) + '</div>'
+        + (earlier > 0 ? '<div class="card-admin-update-more">+ ' + earlier + ' earlier update' + (earlier !== 1 ? 's' : '') + '</div>' : '')
+        + '</div>';
+    }
     return '<div class="truck-card redtag" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
      + '<div class="card-top-row">'
 + '<div class="card-num-wrap"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div>'
@@ -498,7 +512,7 @@
 + '</div>'
       + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
       + '<div class="card-status s-red"><div class="dot"></div>Red Tagged</div>'
-      + r + by + '<div class="click-hint">tap for details</div></div>';
+      + r + by + adminUpdate + '<div class="click-hint">tap for details</div></div>';
   }
   function openDrawer(truckNum) {
     var t = _truckMap[truckNum];
