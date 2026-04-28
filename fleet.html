@@ -8,9 +8,11 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #0e1a2e; color: #f0f4f8; min-height: 100vh; }
     #top-bar { background: linear-gradient(135deg, #1c2e4a 0%, #0e1a2e 100%); border-bottom: 2px solid #2a4a7f; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
-    #top-bar-left { display: flex; align-items: center; gap: 12px; }
+    #top-bar-left { display: flex; align-items: center; gap: 10px; }
     #top-bar h1 { font-size: 1.1rem; font-weight: 700; color: #fff; }
     #top-bar h1 span { color: #4fc3f7; }
+    #fleet-icon { height: 36px; width: auto; flex-shrink: 0; }
+    #harrod-logo { height: 32px; width: auto; flex-shrink: 0; filter: brightness(0) invert(1); }
     .back-btn { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1); color: #cdd5e0; text-decoration: none; border: 1px solid rgba(255,255,255,0.2); border-radius: 7px; padding: 5px 12px; font-size: 0.8rem; transition: background 0.2s; }
     .back-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
     #top-bar-right { display: flex; align-items: center; gap: 12px; }
@@ -141,7 +143,9 @@
       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
       Back to App
     </a>
-    <h1>&#x1F69B; Harrod <span>Fleet Live View</span></h1>
+    <img src="./Harrod%20app%20fleet%20view%20icon.png" id="fleet-icon" alt="Fleet">
+    <img src="./Harrod_Concrete_BlueLogo_TransparentBkgrd.png" id="harrod-logo" alt="Harrod Concrete &amp; Stone">
+    <h1><span>Fleet Live View</span></h1>
   </div>
   <div id="top-bar-right">
     <div id="refresh-info">
