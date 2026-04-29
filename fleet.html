@@ -256,12 +256,13 @@
 </div>
 <script>
   var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec';
-  var REFRESH_INTERVAL = 2 * 60 * 1000;
+  var POLL_INTERVAL = 30 * 1000;
   var LOCATIONS   = ['Frankfort', 'Lexington'];
   var TRUCK_TYPES = ['Concrete Mixer', 'Dump Truck', 'Tractor'];
   var _allTrucks = [], _truckMap = {}, _activeTab = 'Frankfort';
   var _typeFilters = { 'Frankfort': '', 'Lexington': '' };
-  var _refreshTimer = null, _countdownTimer = null, _nextRefreshAt = null, _isLoading = false;
+  var _pollTimer = null, _countdownTimer = null, _nextPollAt = null, _isLoading = false;
+  var _lastKnownTimestamp = null;
   var _params      = new URLSearchParams(window.location.search);
   var _lockedLoc   = (_params.get('location') || '').trim();
   var _lockedType  = (_params.get('type')     || '').trim();
@@ -291,9 +292,10 @@
         if (!data.success) throw new Error(data.message || 'Server error');
         document.getElementById('loading-overlay').style.display = 'none';
         document.getElementById('error-msg').style.display = 'none';
+        if (data.lastModified) _lastKnownTimestamp = data.lastModified;
         renderAll(data.trucks || []);
         document.getElementById('last-updated').textContent = 'Updated ' + fmtTime(new Date());
-        scheduleNextRefresh();
+        schedulePoll();
       })
       .catch(function(err) {
         _isLoading = false;
@@ -302,23 +304,34 @@
         var em = document.getElementById('error-msg');
         em.style.display = 'block';
         em.textContent = 'Could not load fleet data: ' + err.message;
-        scheduleNextRefresh();
+        schedulePoll();
       });
   }
+  function pollForChanges() {
+    fetch(GAS_URL + '?action=lastModified')
+      .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+      .then(function(data) {
+        if (data.lastModified && data.lastModified !== _lastKnownTimestamp) {
+          loadFleetData();
+        } else {
+          schedulePoll();
+        }
+      })
+      .catch(function() { schedulePoll(); });
+  }
   function manualRefresh() {
-    clearTimeout(_refreshTimer); clearInterval(_countdownTimer);
+    clearTimeout(_pollTimer); clearInterval(_countdownTimer);
     document.getElementById('next-refresh').textContent = '';
     loadFleetData();
   }
-  function scheduleNextRefresh() {
-    clearTimeout(_refreshTimer); clearInterval(_countdownTimer);
-    _nextRefreshAt = Date.now() + REFRESH_INTERVAL;
-    _refreshTimer = setTimeout(function() { loadFleetData(); }, REFRESH_INTERVAL);
+  function schedulePoll() {
+    clearTimeout(_pollTimer); clearInterval(_countdownTimer);
+    _nextPollAt = Date.now() + POLL_INTERVAL;
+    _pollTimer = setTimeout(function() { pollForChanges(); }, POLL_INTERVAL);
     _countdownTimer = setInterval(function() {
-      var s = Math.max(0, Math.round((_nextRefreshAt - Date.now()) / 1000));
-      var m = Math.floor(s / 60); s = s % 60;
-      document.getElementById('next-refresh').textContent = 'Next refresh in ' + m + ':' + (s < 10 ? '0' : '') + s;
-      if (m <= 0 && s <= 0) clearInterval(_countdownTimer);
+      var s = Math.max(0, Math.round((_nextPollAt - Date.now()) / 1000));
+      document.getElementById('next-refresh').textContent = 'Checking in ' + s + 's';
+      if (s <= 0) clearInterval(_countdownTimer);
     }, 1000);
   }
   function switchTab(loc, btn) {
