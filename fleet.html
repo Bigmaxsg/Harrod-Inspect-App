@@ -359,12 +359,15 @@
       b.classList.toggle('active', b.dataset.type === af);
     });
   }
+  function activeLoc(t) {
+    return t.currentLocation || (t.status === 'in_use' && t.preTrip && t.preTrip.location) || t.location;
+  }
   function renderAll(trucks) {
     _allTrucks = trucks; _truckMap = {};
     trucks.forEach(function(t) { _truckMap[t.truckNumber] = t; });
     var byLoc = {};
     LOCATIONS.forEach(function(loc) { byLoc[loc] = []; });
-    trucks.forEach(function(t) { if (byLoc[t.location] !== undefined) byLoc[t.location].push(t); });
+    trucks.forEach(function(t) { var loc = activeLoc(t); if (byLoc[loc] !== undefined) byLoc[loc].push(t); });
     LOCATIONS.forEach(function(loc) {
       var el = document.getElementById('tc-' + loc);
       if (el) el.textContent = byLoc[loc].length;
@@ -534,7 +537,8 @@
     var t = _truckMap[truckNum];
     if (!t) return;
     document.getElementById('drawer-title').textContent = 'Truck #' + t.truckNumber;
-    document.getElementById('drawer-subtitle').textContent = t.year + ' ' + t.make + ' - ' + (t.type||'') + ' - ' + (t.location||'');
+    var aLoc = activeLoc(t);
+    document.getElementById('drawer-subtitle').textContent = t.year + ' ' + t.make + ' - ' + (t.type||'') + ' - ' + aLoc;
     var body = '';
 
 var drawerPhotoSrc = driveImgUrl(t.photoFrontLink) || t.frontThumb || null;
@@ -552,7 +556,7 @@ var statusHtml = '';
       + '<div class="drawer-row"><span class="drawer-lbl">Truck #</span><span class="drawer-val bold">' + esc(t.truckNumber) + '</span></div>'
       + '<div class="drawer-row"><span class="drawer-lbl">Year / Make</span><span class="drawer-val">' + esc(t.year + ' ' + t.make) + '</span></div>'
       + '<div class="drawer-row"><span class="drawer-lbl">Type</span><span class="drawer-val">' + esc(t.type||'-') + '</span></div>'
-      + '<div class="drawer-row"><span class="drawer-lbl">Location</span><span class="drawer-val">' + esc(t.location||'-') + '</span></div>'
+      + '<div class="drawer-row"><span class="drawer-lbl">Location</span><span class="drawer-val">' + esc(aLoc) + (aLoc !== t.location ? ' <span style="font-size:0.7rem;color:#6b90b8">(home: ' + esc(t.location) + ')</span>' : '') + '</span></div>'
       + (t.vin ? '<div class="drawer-row"><span class="drawer-lbl">VIN</span><span class="drawer-val" style="font-size:0.75rem;word-break:break-all">' + esc(t.vin) + '</span></div>' : '')
       + '<div class="drawer-row"><span class="drawer-lbl">Status</span><span class="drawer-val">' + statusHtml + '</span></div></div>';
     if (t.status==='in_use' && t.currentDriver) {
