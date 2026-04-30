@@ -400,7 +400,7 @@
     if (!inner) return;
     var af = _typeFilters[loc] || '';
     var afTypes = af ? af.split(',').map(function(s){return s.trim().toLowerCase();}) : [];
-    var lt = _allTrucks.filter(function(t) { return t.location === loc; });
+    var lt = _allTrucks.filter(function(t) { return activeLoc(t) === loc; });
     var filtered = afTypes.length === 0 ? lt : lt.filter(function(t) {
       return afTypes.indexOf((t.type || '').trim().toLowerCase()) !== -1;
     });
