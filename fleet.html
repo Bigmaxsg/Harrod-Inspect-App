@@ -407,7 +407,7 @@
     var fl = af ? ' - ' + af + 's' : '';
     var hasInUse = inUse.length > 0;
 
-    var iuCols   = Math.min(inUse.length || 1, 7);
+    var iuCols   = Math.min(inUse.length || 1, 6);
     var iuPx     = iuCols * 165 + 13;
     var wrapAttr = hasInUse
       ? 'class="sections-wrap" style="grid-template-columns:' + iuPx + 'px minmax(343px, 1fr) 343px"'
