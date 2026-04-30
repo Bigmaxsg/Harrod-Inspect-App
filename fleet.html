@@ -463,10 +463,13 @@
     var dr = t.currentDriver ? driverRowHTML(t.currentDriver, t.driverPhoto, t.driverAssigned, 'Driver') : '';
     var def = '';
     if (t.preTrip) {
+      var ptCorr = Array.isArray(t.preTrip.corrections) ? t.preTrip.corrections : [];
+      var ptCorrTotal = ptCorr.reduce(function(s, c) { return s + (c.defectsCorrected || 0); }, 0);
+      var ptAllFixed = t.preTrip.openDefectCount === 0 || (ptCorr.length > 0 && ptCorrTotal >= (t.preTrip.defectCount || 0));
       if (!t.preTrip.hasDefects) {
         def = '<div class="card-defect-ok">No defects</div>';
-      } else if (t.preTrip.openDefectCount === 0) {
-        def = '<div class="card-defect-ok">✓ All fixed mid-day</div>';
+      } else if (ptAllFixed) {
+        def = '<div class="card-defect-ok">✓ All defects corrected</div>';
       } else {
         var oc = t.preTrip.openDefectCount !== undefined ? t.preTrip.openDefectCount : t.preTrip.defectCount;
         def = '<div class="card-defect-warn"> ' + oc + ' open defect(s)</div>';
@@ -583,12 +586,13 @@ var statusHtml = '';
       if (isPreTrip) {
         var openCount = tripRec.openDefectCount !== undefined ? tripRec.openDefectCount : null;
         var corrections = Array.isArray(tripRec.corrections) ? tripRec.corrections : [];
-        var allFixed = openCount === 0 && corrections.length > 0;
+        var totalCorrected = corrections.reduce(function(sum, c) { return sum + (c.defectsCorrected || 0); }, 0);
+        var allFixed = openCount === 0 || (corrections.length > 0 && totalCorrected >= (tripRec.defectCount || 0));
         if (!tripRec.hasDefects) {
           defectBody='<div class="defect-none">No defects reported</div>';
         } else {
           if (allFixed) {
-            defectBody='<div class="defect-item"><div class="defect-dot defect-fixed-dot"></div><div style="color:#a5d6a7;font-weight:600">🔧 All Fixed Mid-Day</div></div>';
+            defectBody='<div class="defect-item"><div class="defect-dot defect-fixed-dot"></div><div style="color:#a5d6a7;font-weight:600">✓ All defects corrected</div></div>';
           } else {
             var showCount = openCount !== null ? openCount : tripRec.defectCount;
             defectBody='<div class="defect-item"><div class="defect-dot"></div><div style="font-weight:600">'+esc(showCount+' open defect(s)')+'</div></div>';
@@ -599,18 +603,24 @@ var statusHtml = '';
             ptLabels.forEach(function(lbl) { defectBody+='<li>'+esc(lbl)+'</li>'; });
             defectBody+='</ul>';
           }
-          if (tripRec.defectsNotes) {
-            defectBody+='<div class="defect-driver-note">'+esc(tripRec.defectsNotes)+'</div>';
-          }
           if (corrections.length > 0) {
             defectBody+='<div class="corrections-summary">';
             corrections.forEach(function(c) {
-              defectBody+='<div class="correction-summary-line">🔧 '+esc(c.defectsCorrected+' fixed mid-day by '+c.correctorName)
+              defectBody+='<div class="correction-summary-line">🔧 '+esc((c.defectsCorrected||0)+' defect'+(c.defectsCorrected!==1?'s':'')+' corrected by '+c.correctorName)
                 +(c.correctorRole?' <span style="color:#6b90b8;font-size:0.7rem">('+esc(c.correctorRole)+')</span>':'')
                 +'</div>';
+              if (c.notes || c.mechanicNotes) {
+                defectBody+='<div class="defect-driver-note" style="margin-left:16px;margin-top:2px">'+esc(c.notes || c.mechanicNotes)+'</div>';
+              }
             });
             defectBody+='</div>';
           }
+        }
+        if (tripRec.defectsNotes) {
+          defectBody+='<div style="margin-top:8px;padding:7px 9px;background:rgba(79,195,247,0.06);border-radius:6px;border-left:2px solid #4fc3f7">'
+            +'<div style="font-size:0.67rem;font-weight:700;color:#4fc3f7;margin-bottom:3px;letter-spacing:0.04em">DRIVER NOTE</div>'
+            +'<div style="font-size:0.78rem;color:#cdd5e0">'+esc(tripRec.defectsNotes)+'</div>'
+            +'</div>';
         }
       } else {
         if (!tripRec.hasDefects || tripRec.defectCount === 0) {
