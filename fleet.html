@@ -400,7 +400,7 @@
     if (!inner) return;
     var af = _typeFilters[loc] || '';
     var afTypes = af ? af.split(',').map(function(s){return s.trim().toLowerCase();}) : [];
-    var lt = _allTrucks.filter(function(t) { return t.location === loc; });
+    var lt = _allTrucks.filter(function(t) { return activeLoc(t) === loc; });
     var filtered = afTypes.length === 0 ? lt : lt.filter(function(t) {
       return afTypes.indexOf((t.type || '').trim().toLowerCase()) !== -1;
     });
@@ -597,94 +597,4 @@ var statusHtml = '';
           if (ptLabels.length > 0) {
             defectBody+='<ul class="defect-label-list">';
             ptLabels.forEach(function(lbl) { defectBody+='<li>'+esc(lbl)+'</li>'; });
-            defectBody+='</ul>';
-          }
-          if (tripRec.defectsNotes) {
-            defectBody+='<div class="defect-driver-note">'+esc(tripRec.defectsNotes)+'</div>';
-          }
-          if (corrections.length > 0) {
-            defectBody+='<div class="corrections-summary">';
-            corrections.forEach(function(c) {
-              defectBody+='<div class="correction-summary-line">🔧 '+esc(c.defectsCorrected+' fixed mid-day by '+c.correctorName)
-                +(c.correctorRole?' <span style="color:#6b90b8;font-size:0.7rem">('+esc(c.correctorRole)+')</span>':'')
-                +'</div>';
-            });
-            defectBody+='</div>';
-          }
-        }
-      } else {
-        if (!tripRec.hasDefects || tripRec.defectCount === 0) {
-          defectBody='<div class="defect-none">✅ No defects reported</div>';
-        } else if (tripRec.postAllClear) {
-          var ltN = tripRec.correctedDefectCount || tripRec.defectCount;
-          var ltPlu = ltN !== 1 ? 's' : '';
-          defectBody='<div class="defect-item"><div class="defect-dot defect-fixed-dot"></div><div style="color:#a5d6a7;font-weight:600">✅ '+esc(ltN+' defect'+ltPlu+' corrected end of shift')+'</div></div>';
-          var cLabels = Array.isArray(tripRec.correctedDefectLabels) ? tripRec.correctedDefectLabels : [];
-          if (cLabels.length > 0) {
-            defectBody+='<ul class="defect-label-list">';
-            cLabels.forEach(function(lbl) { defectBody+='<li>'+esc(lbl)+'</li>'; });
-            defectBody+='</ul>';
-          }
-        } else if (tripRec.lastTripStatus === 'Complete') {
-          var ltR = tripRec.remainingDefectCount || 0;
-          var ltRPlu = ltR !== 1 ? 's' : '';
-          defectBody='<div class="defect-item"><div class="defect-dot"></div><div style="font-weight:600;color:#ffee58">⚠ '+esc(ltR+' defect'+ltRPlu+' unresolved')+'</div></div>';
-          var rLabels = Array.isArray(tripRec.remainingDefectLabels) ? tripRec.remainingDefectLabels : [];
-          if (rLabels.length > 0) {
-            defectBody+='<ul class="defect-label-list">';
-            rLabels.forEach(function(lbl) { defectBody+='<li>'+esc(lbl)+'</li>'; });
-            defectBody+='</ul>';
-          }
-          var ltCC = tripRec.correctedDefectCount || 0;
-          if (ltCC > 0) {
-            var ccLabels = Array.isArray(tripRec.correctedDefectLabels) ? tripRec.correctedDefectLabels : [];
-            defectBody+='<div class="defect-driver-note">✓ '+esc(ltCC+' corrected: '+(ccLabels.length ? ccLabels.join(', ') : 'see details'))+'</div>';
-          }
-        } else {
-          var ltDC = tripRec.defectCount || 0;
-          var ltDPlu = ltDC !== 1 ? 's' : '';
-          defectBody='<div class="defect-item"><div class="defect-dot"></div><div style="font-weight:600">'+esc(ltDC+' defect'+ltDPlu)+'</div></div>';
-          var dLabels = Array.isArray(tripRec.defectLabels) ? tripRec.defectLabels : [];
-          if (dLabels.length > 0) {
-            defectBody+='<ul class="defect-label-list">';
-            dLabels.forEach(function(lbl) { defectBody+='<li>'+esc(lbl)+'</li>'; });
-            defectBody+='</ul>';
-          }
-          if (tripRec.defectsNotes) {
-            defectBody+='<div class="defect-driver-note">'+esc(tripRec.defectsNotes)+'</div>';
-          }
-        }
-      }
-      body+='<div class="drawer-section"><div class="drawer-section-title">'+(t.status==='in_use'?'Current Pre-Trip':'Last Trip Inspection')+'</div>'+defectBody+'</div>';
-    }
-    if (t.redTag) {
-      body+='<div class="drawer-section"><div class="drawer-section-title">Red Tag Details</div><div class="redtag-detail-box"><div class="redtag-detail-reason"> '+esc(t.redTag.reason||'No reason specified')+'</div><div class="redtag-detail-meta">Tagged by: <strong>'+esc(t.redTag.taggedBy)+'</strong>'+(t.redTag.taggedByRole?' ('+esc(t.redTag.taggedByRole)+')':'')+'</div>'+(t.redTag.taggedAt?'<div class="redtag-detail-meta" style="margin-top:4px">Tagged: '+esc(fmtDateTime(t.redTag.taggedAt))+'</div>':'')+'</div><div style="margin-top:10px;font-size:0.78rem;color:#ef9a9a;font-weight:600">Out of service until red tag is resolved.</div></div>';
-    }
-    if (t.notes) {
-      body+='<div class="drawer-section"><div class="drawer-section-title">Truck Notes</div><div style="font-size:0.82rem;color:#cdd5e0">'+esc(t.notes)+'</div></div>';
-    }
-    document.getElementById('drawer-body').innerHTML = body;
-    document.getElementById('drawer-backdrop').classList.add('open');
-    document.getElementById('drawer').classList.add('open');
-    document.body.style.overflow = 'hidden';
-  }
-  function closeDrawer() {
-    document.getElementById('drawer-backdrop').classList.remove('open');
-    document.getElementById('drawer').classList.remove('open');
-    document.body.style.overflow = '';
-  }
-  document.addEventListener('keydown', function(e) { if (e.key==='Escape') closeDrawer(); });
-  function esc(s) {
-    return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-  }
-  function driveImgUrl(link) {
-    if (!link) return null;
-    var m = link.match(/\/d\/([a-zA-Z0-9_-]+)/) || link.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-    return m ? 'https://lh3.googleusercontent.com/d/' + m[1] : null;
-  }
-  function fmtTime(d) { var h=d.getHours(),m=d.getMinutes(),ap=h<12?'AM':'PM'; h=h%12||12; return h+':'+(m<10?'0':'')+m+' '+ap; }
-  function fmtDate(iso) { if(!iso)return''; var d=new Date(iso+'T00:00:00'); if(isNaN(d))return iso; return (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2); }
-  function fmtDateTime(ts) { if(!ts)return''; var d=new Date(ts); if(isNaN(d))return ts; return (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2)+' '+fmtTime(d); }
-</script>
-</body>
-</html>
+            
