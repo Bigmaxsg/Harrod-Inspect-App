@@ -490,6 +490,8 @@
     var def = '';
     if (!t.lastTrip) {
       def = '<div class="card-defect-ok">No history yet</div>';
+    } else if (t.lastTrip.postTripDone === false) {
+      def = '<div class="card-defect-warn" style="color:#e65100;background:#fff3e0;">⚠ Post-trip not submitted</div>';
     } else if (!t.lastTrip.hasDefects || t.lastTrip.defectCount === 0) {
       def = '<div class="card-defect-ok">✅ No defects</div>';
     } else if (t.lastTrip.postAllClear) {
@@ -623,8 +625,14 @@ var statusHtml = '';
             +'</div>';
         }
       } else {
+        if (tripRec.postTripDone === false) {
+          defectBody='<div style="background:rgba(230,81,0,0.12);border:1px solid rgba(230,81,0,0.4);border-radius:7px;padding:10px 12px;margin-bottom:8px;">'
+            +'<div style="font-size:0.8rem;font-weight:700;color:#ff8a65;">⚠ Post-trip inspection not submitted</div>'
+            +'<div style="font-size:0.73rem;color:#ffb59d;margin-top:3px;">Driver did not complete a post-trip DVIR for this shift.</div>'
+            +'</div>';
+        }
         if (!tripRec.hasDefects || tripRec.defectCount === 0) {
-          defectBody='<div class="defect-none">✅ No defects reported</div>';
+          defectBody+='<div class="defect-none">✅ No defects reported</div>';
         } else if (tripRec.postAllClear) {
           var ltN = tripRec.correctedDefectCount || tripRec.defectCount;
           var ltPlu = ltN !== 1 ? 's' : '';
