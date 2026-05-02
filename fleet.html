@@ -45,7 +45,7 @@
     .summary-bar { flex-shrink: 0; display: flex; gap: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 14px; margin-bottom: 8px; flex-wrap: wrap; }
     .summary-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; }
     .summary-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .sections-wrap { flex: 1; min-height: 0; display: grid; gap: 10px; align-items: stretch; width: 100%; overflow-x: hidden; }
+    .sections-wrap { flex: 1; min-height: 0; display: grid; grid-template-columns: 4fr 5fr 2fr; gap: 10px; align-items: stretch; width: 100%; overflow-x: hidden; }
     .sections-wrap.layout-idle { grid-template-columns: 2fr 7fr 2fr; }
     .section-block { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
     .section-header { display: flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 8px 8px 0 0; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; }
@@ -101,10 +101,10 @@
   object-position: center center;
   display: block;
 }
-    .card-num { font-size: 1.12rem; font-weight: 900; color: #0d2a5e; line-height: 1; }
-    .card-type-chip { font-size: 0.59rem; font-weight: 700; padding: 2px 5px; border-radius: 7px; background: #e8edf8; color: #3a5a8c; flex-shrink: 0; white-space: nowrap; }
-    .card-make { font-size: 0.67rem; color: #5a6e8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card-status { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 12px; font-size: 0.63rem; font-weight: 700; width: fit-content; }
+    .card-num { font-size: 1.22rem; font-weight: 900; color: #0d2a5e; line-height: 1; }
+    .card-type-chip { font-size: 0.69rem; font-weight: 700; padding: 2px 5px; border-radius: 7px; background: #e8edf8; color: #3a5a8c; flex-shrink: 0; white-space: nowrap; }
+    .card-make { font-size: 0.77rem; color: #5a6e8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-status { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 12px; font-size: 0.73rem; font-weight: 700; width: fit-content; }
     .card-status .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
     .s-green  { background: #e8f5e9; color: #2e7d32; } .s-green .dot  { background: #43a047; }
     .s-yellow { background: #fff8e1; color: #e65100; } .s-yellow .dot { background: #f9a825; }
@@ -112,25 +112,25 @@
     .card-driver-row { display: flex; align-items: center; gap: 6px; border-radius: 5px; padding: 4px 6px; margin: 0 -2px; }
     .card-driver-row.assigned { background: #e3f2fd; }
     .card-driver-row.temp     { background: #fff3e0; border: 1px solid #ffcc80; }
-    .driver-mini-avatar { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; color: #fff; }
+    .driver-mini-avatar { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #fff; }
     .driver-mini-avatar.assigned-av { background: #1565c0; }
     .driver-mini-avatar.temp-av     { background: #e65100; }
     .driver-mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .driver-name-col { flex: 1; min-width: 0; }
-    .driver-name-text { font-size: 0.72rem; font-weight: 700; color: #1a2535; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
-    .driver-label-text { font-size: 0.58rem; color: #7a8fa8; line-height: 1.2; }
-    .temp-flag { font-size: 0.56rem; font-weight: 700; color: #e65100; display: block; }
-    .card-defect-ok   { font-size: 0.62rem; color: #2e7d32; font-weight: 600; }
-    .card-defect-warn { font-size: 0.62rem; color: #e65100; font-weight: 600; }
-    .card-redtag-reason { font-size: 0.62rem; color: #c62828; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card-last-trip { font-size: 0.59rem; color: #7a8fa8; }
-    .card-pretrip-time { font-size: 0.59rem; color: #7a8fa8; }
-    .card-elapsed { font-size: 0.62rem; color: #4fc3f7; font-weight: 700; display: flex; align-items: center; gap: 3px; }
-    .click-hint { font-size: 0.57rem; color: #aab8cc; text-align: right; margin-top: 1px; }
+    .driver-name-text { font-size: 0.82rem; font-weight: 700; color: #1a2535; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+    .driver-label-text { font-size: 0.68rem; color: #7a8fa8; line-height: 1.2; }
+    .temp-flag { font-size: 0.66rem; font-weight: 700; color: #e65100; display: block; }
+    .card-defect-ok   { font-size: 0.72rem; color: #2e7d32; font-weight: 600; }
+    .card-defect-warn { font-size: 0.72rem; color: #e65100; font-weight: 600; }
+    .card-redtag-reason { font-size: 0.72rem; color: #c62828; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-last-trip { font-size: 0.69rem; color: #7a8fa8; }
+    .card-pretrip-time { font-size: 0.69rem; color: #7a8fa8; }
+    .card-elapsed { font-size: 0.72rem; color: #4fc3f7; font-weight: 700; display: flex; align-items: center; gap: 3px; }
+    .click-hint { font-size: 0.67rem; color: #aab8cc; text-align: right; margin-top: 1px; }
     .card-admin-update { background: rgba(245,124,0,0.12); border: 1px solid rgba(245,124,0,0.3); border-radius: 5px; padding: 4px 6px; margin-top: 3px; }
-    .card-admin-update-header { font-size: 0.58rem; font-weight: 700; color: #fb8c00; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .card-admin-update-comment { font-size: 0.62rem; color: #ffcc80; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
-    .card-admin-update-more { font-size: 0.55rem; color: #f57c00; margin-top: 2px; }
+    .card-admin-update-header { font-size: 0.68rem; font-weight: 700; color: #fb8c00; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-admin-update-comment { font-size: 0.72rem; color: #ffcc80; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+    .card-admin-update-more { font-size: 0.65rem; color: #f57c00; margin-top: 2px; }
 
     /* compact mode — only truck # + type chip, no thumbnail */
     .card-compact { padding: 5px 8px; }
@@ -403,12 +403,7 @@
     var redtag = sortTrucks(filtered.filter(function(t) { return t.status === 'red_tagged'; }));
     var fl = af ? ' - ' + af + 's' : '';
     var hasInUse = inUse.length > 0;
-
-    var iuCols   = Math.min(inUse.length || 1, 6);
-    var iuPx     = iuCols * 165 + 13;
-    var wrapAttr = hasInUse
-      ? 'class="sections-wrap" style="grid-template-columns:' + iuPx + 'px minmax(343px, 1fr) 343px"'
-      : 'class="sections-wrap layout-idle"';
+    var wrapAttr = hasInUse ? 'class="sections-wrap"' : 'class="sections-wrap layout-idle"';
     var sum = '<div class="summary-bar">'
       + si('#66bb6a', inUse.length  + ' In Use')
       + si('#ffee58', idle.length   + ' Not In Use')
