@@ -6,7 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0e1a2e; color: #f0f4f8; min-height: 100vh; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0e1a2e; color: #f0f4f8; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    #main-content { flex: 1; min-height: 0; padding: 10px 14px; display: flex; flex-direction: column; overflow: hidden; }
+    #panes { flex: 1; min-height: 0; display: flex; flex-direction: column; }
     #top-bar { background: linear-gradient(135deg, #1c2e4a 0%, #0e1a2e 100%); border-bottom: 2px solid #2a4a7f; padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 200; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
     #top-bar-left { display: flex; align-items: center; gap: 10px; }
     #top-bar h1 { font-size: 1.1rem; font-weight: 700; color: #fff; }
@@ -32,37 +34,20 @@
     .spinner { width: 40px; height: 40px; border: 4px solid rgba(79,195,247,0.2); border-top-color: #4fc3f7; border-radius: 50%; animation: spin 0.8s linear infinite; }
     .loading-txt { color: #8fa8c8; font-size: 0.88rem; }
     #error-msg { display: none; background: #3e1010; border: 1px solid #c62828; color: #ef9a9a; border-radius: 10px; padding: 14px 20px; margin: 20px; font-size: 0.88rem; }
-    .location-pane { display: none; padding: 12px 16px; }
-    .location-pane.active { display: block; }
-    .type-filter-bar { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 10px; align-items: center; }
+    .location-pane { display: none; }
+    .location-pane.active { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .pane-inner { display: flex; flex-direction: column; flex: 1; min-height: 0; }
+    .type-filter-bar { flex-shrink: 0; display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 8px; align-items: center; }
     .filter-label { font-size: 0.73rem; font-weight: 600; color: #6b90b8; margin-right: 2px; white-space: nowrap; }
     .type-btn { padding: 4px 12px; border-radius: 16px; font-size: 0.75rem; font-weight: 600; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.07); color: #9ac3e8; cursor: pointer; transition: all 0.15s; }
     .type-btn:hover { background: rgba(255,255,255,0.13); color: #fff; }
     .type-btn.active { background: #1565c0; border-color: #1976d2; color: #fff; }
-    .summary-bar { display: flex; gap: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 8px 14px; margin-bottom: 10px; flex-wrap: wrap; }
+    .summary-bar { flex-shrink: 0; display: flex; gap: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; padding: 6px 14px; margin-bottom: 8px; flex-wrap: wrap; }
     .summary-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; }
     .summary-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-    .sections-wrap {
-  display: grid;
-  gap: 12px;
-  align-items: flex-start;
-  width: 100%;
-  overflow-x: hidden;
-}
-
-.sections-wrap.layout-idle {
-  grid-template-columns: 2fr 7fr 2fr;
-}
-
-.section-block {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.truck-card {
-  width: 100%;
-}
+    .sections-wrap { flex: 1; min-height: 0; display: grid; gap: 10px; align-items: stretch; width: 100%; overflow-x: hidden; }
+    .sections-wrap.layout-idle { grid-template-columns: 2fr 7fr 2fr; }
+    .section-block { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
     .section-header { display: flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 8px 8px 0 0; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; }
     .section-header.green  { background: #1b3d1e; color: #a5d6a7; border-bottom: 2px solid #2e7d32; }
     .section-header.yellow { background: #3d3000; color: #fff176; border-bottom: 2px solid #f9a825; }
@@ -72,7 +57,7 @@
     .col-dot.yellow { background: #ffee58; box-shadow: 0 0 5px #ffee58; }
     .col-dot.red    { background: #ef5350; box-shadow: 0 0 5px #ef5350; }
     .col-count { margin-left: auto; font-size: 0.72rem; opacity: 0.7; }
-    .card-grid { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-top: none; border-radius: 0 0 8px 8px; padding: 8px; min-height: 50px; display: grid; grid-template-columns: repeat(auto-fill, 158px); gap: 7px; align-items: start; }
+    .card-grid { flex: 1; min-height: 0; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-top: none; border-radius: 0 0 8px 8px; padding: 8px; display: grid; grid-template-columns: repeat(auto-fill, 158px); gap: 7px; align-content: start; overflow: hidden; }
     .col-empty { text-align: center; padding: 18px 8px; color: #4a6080; font-size: 0.78rem; font-style: italic; grid-column: 1 / -1; }
     .truck-card { background: #fff; border-radius: 8px; padding: 9px 10px 8px; color: #1a2535; box-shadow: 0 1px 6px rgba(0,0,0,0.2); border-left: 3px solid #ccc; display: flex; flex-direction: column; gap: 5px; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; width: 158px; }
     .truck-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.32); }
@@ -245,7 +230,7 @@
   <button class="tab-btn active" onclick="switchTab('Frankfort',this)">&#x1F4CD; Frankfort <span class="tab-count" id="tc-Frankfort">-</span></button>
   <button class="tab-btn" onclick="switchTab('Lexington',this)">&#x1F4CD; Lexington <span class="tab-count" id="tc-Lexington">-</span></button>
 </div>
-<div id="main-content" style="padding:12px 16px;">
+<div id="main-content">
   <div id="loading-overlay"><div class="spinner"></div><div class="loading-txt">Loading fleet data...</div></div>
   <div id="error-msg"></div>
   <div id="panes"></div>
@@ -442,33 +427,53 @@
       + '</div>'
       + '</div>';
     inner.innerHTML = sum + wrap;
-    requestAnimationFrame(function() { requestAnimationFrame(fitGridWidths); });
+    requestAnimationFrame(function() { requestAnimationFrame(fitAllGrids); });
   }
 
-  // Stretch cards to fill available section width; compact mode if cards get tiny
-  function fitGridWidths() {
-    document.querySelectorAll('#panes .card-grid').forEach(function(gridEl) {
-      var cards = Array.from(gridEl.querySelectorAll('.truck-card'));
-      var N = cards.length;
-      gridEl.style.gridTemplateColumns = '';
-      cards.forEach(function(c) { c.style.width = ''; c.style.overflow = ''; c.classList.remove('card-compact'); });
-      if (!N) return;
+  function fitGridToSection(gridEl) {
+    var cards = Array.from(gridEl.querySelectorAll('.truck-card'));
+    var N = cards.length;
+    gridEl.style.gridTemplateColumns = '';
+    gridEl.style.gridTemplateRows = '';
+    gridEl.style.overflowY = '';
+    cards.forEach(function(c) { c.style.width = ''; c.style.height = ''; c.style.overflow = ''; c.classList.remove('card-compact'); });
+    if (!N) return;
 
-      var GAP = 7, PAD = 8, NAT = 158;
-      var availW = gridEl.clientWidth - PAD * 2;
-      if (availW < NAT) return;
+    var GAP = 7, PAD = 8;
+    var availW = gridEl.clientWidth  - PAD * 2;
+    var availH = gridEl.clientHeight - PAD * 2;
+    if (availW < 20 || availH < 20) return;
 
-      var cols  = Math.min(N, Math.max(1, Math.floor((availW + GAP) / (NAT + GAP))));
-      var cardW = Math.floor((availW - GAP * (cols - 1)) / cols);
+    var bestCols = 1, bestMin = 0;
+    for (var c = 1; c <= N; c++) {
+      var r = Math.ceil(N / c);
+      var w = (availW - GAP * (c - 1)) / c;
+      var h = (availH - GAP * (r - 1)) / r;
+      if (w <= 0 || h <= 0) continue;
+      var m = Math.min(w, h);
+      if (m > bestMin) { bestMin = m; bestCols = c; }
+    }
 
-      gridEl.style.gridTemplateColumns = 'repeat(' + cols + ', ' + cardW + 'px)';
-      cards.forEach(function(card) {
-        card.style.width    = cardW + 'px';
-        card.style.overflow = 'hidden';
-        // compact (truck# + type only, no thumbnail) if cards are forced very narrow
-        card.classList.toggle('card-compact', cardW < 65);
-      });
+    var rows  = Math.ceil(N / bestCols);
+    var cardW = Math.floor((availW - GAP * (bestCols - 1)) / bestCols);
+    var cardH = Math.floor((availH - GAP * (rows    - 1)) / rows);
+    var compact = cardH < 65;
+
+    gridEl.style.gridTemplateColumns = 'repeat(' + bestCols + ', ' + cardW + 'px)';
+    gridEl.style.gridTemplateRows    = 'repeat(' + rows    + ', ' + cardH + 'px)';
+    gridEl.style.overflowY  = 'hidden';
+    gridEl.style.alignContent = 'start';
+
+    cards.forEach(function(card) {
+      card.style.width    = cardW + 'px';
+      card.style.height   = cardH + 'px';
+      card.style.overflow = 'hidden';
+      card.classList.toggle('card-compact', compact);
     });
+  }
+
+  function fitAllGrids() {
+    document.querySelectorAll('#panes .card-grid').forEach(fitGridToSection);
   }
 
   var _resizeTimer = null;
