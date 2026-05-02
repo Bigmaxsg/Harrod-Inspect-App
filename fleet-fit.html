@@ -437,7 +437,6 @@
     return '<div class="truck-card inuse" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
       + '<div class="card-top-row"><div class="card-num-wrap"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div></div>'
       + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
-      + '<div class="card-status s-green"><div class="dot"></div>In Use Today</div>'
       + (t.preTrip && t.preTrip.submittedAt ? '<div class="card-pretrip-time">Pre-trip: ' + fmtTime(new Date(t.preTrip.submittedAt)) + '</div><div class="card-elapsed" data-pretrip-start="' + esc(t.preTrip.submittedAt) + '">⏱ ' + (fmtElapsed(t.preTrip.submittedAt) || '...') + '</div>' : '')
       + dr + def + '<div class="click-hint">tap for details</div></div>';
   }
@@ -465,7 +464,6 @@
     return '<div class="truck-card idle" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
       + '<div class="card-top-row"><div class="card-num-wrap"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div></div>'
       + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
-      + '<div class="card-status s-yellow"><div class="dot"></div>Not In Use</div>'
       + dr + def + lt + '<div class="click-hint">tap for details</div></div>';
   }
 
@@ -485,7 +483,6 @@
     return '<div class="truck-card redtag" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
       + '<div class="card-top-row"><div class="card-num-wrap"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div></div>'
       + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
-      + '<div class="card-status s-red"><div class="dot"></div>Red Tagged</div>'
       + r + by + adminUpdate + '<div class="click-hint">tap for details</div></div>';
   }
 
