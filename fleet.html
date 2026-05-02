@@ -146,6 +146,11 @@
     .card-admin-update-header { font-size: 0.58rem; font-weight: 700; color: #fb8c00; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-admin-update-comment { font-size: 0.62rem; color: #ffcc80; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
     .card-admin-update-more { font-size: 0.55rem; color: #f57c00; margin-top: 2px; }
+
+    /* compact mode — only truck # + type chip, no thumbnail */
+    .card-compact { padding: 5px 8px; }
+    .card-compact > *:not(.card-top-row) { display: none; }
+    .card-compact .card-front-thumb { display: none; }
     #drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; }
     #drawer-backdrop.open { display: block; }
     #drawer { position: fixed; top: 0; right: -440px; width: 420px; max-width: 96vw; height: 100vh; background: #0e1a2e; border-left: 2px solid #2a4a7f; z-index: 301; overflow-y: auto; transition: right 0.3s ease; box-shadow: -4px 0 24px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
@@ -437,7 +442,43 @@
       + '</div>'
       + '</div>';
     inner.innerHTML = sum + wrap;
+    requestAnimationFrame(function() { requestAnimationFrame(fitGridWidths); });
   }
+
+  // Stretch cards to fill available section width; compact mode if cards get tiny
+  function fitGridWidths() {
+    document.querySelectorAll('#panes .card-grid').forEach(function(gridEl) {
+      var cards = Array.from(gridEl.querySelectorAll('.truck-card'));
+      var N = cards.length;
+      gridEl.style.gridTemplateColumns = '';
+      cards.forEach(function(c) { c.style.width = ''; c.style.overflow = ''; c.classList.remove('card-compact'); });
+      if (!N) return;
+
+      var GAP = 7, PAD = 8, NAT = 158;
+      var availW = gridEl.clientWidth - PAD * 2;
+      if (availW < NAT) return;
+
+      var cols  = Math.min(N, Math.max(1, Math.floor((availW + GAP) / (NAT + GAP))));
+      var cardW = Math.floor((availW - GAP * (cols - 1)) / cols);
+
+      gridEl.style.gridTemplateColumns = 'repeat(' + cols + ', ' + cardW + 'px)';
+      cards.forEach(function(card) {
+        card.style.width    = cardW + 'px';
+        card.style.overflow = 'hidden';
+        // compact (truck# + type only, no thumbnail) if cards are forced very narrow
+        card.classList.toggle('card-compact', cardW < 65);
+      });
+    });
+  }
+
+  var _resizeTimer = null;
+  window.addEventListener('resize', function() {
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(function() {
+      var locsToRender = _lockedLoc ? [_lockedLoc] : LOCATIONS;
+      locsToRender.forEach(renderPane);
+    }, 150);
+  });
   function si(color, label) {
     return '<div class="summary-item"><div class="summary-dot" style="background:' + color + ';box-shadow:0 0 4px ' + color + '"></div><span>' + esc(label) + '</span></div>';
   }
