@@ -100,10 +100,6 @@
     .card-admin-update-comment { font-size: 0.62rem; color: #ffcc80; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
     .card-admin-update-more { font-size: 0.55rem; color: #f57c00; margin-top: 2px; }
 
-    /* compact mode — only truck # + type chip visible */
-    .card-compact { padding: 5px 8px; }
-    .card-compact > *:not(.card-top-row) { display: none; }
-
     /* ── Drawer ── */
     #drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; }
     #drawer-backdrop.open { display: block; }
@@ -369,13 +365,10 @@
     gridEl.style.overflowY  = 'hidden';
     gridEl.style.alignContent = 'start';
 
-    // Below 65px height only truck # + type chip guaranteed visible; hide everything else
-    var compact = cardH < 65;
     cards.forEach(function(card) {
       card.style.width    = cardW + 'px';
       card.style.height   = cardH + 'px';
       card.style.overflow = 'hidden';
-      card.classList.toggle('card-compact', compact);
     });
   }
 
