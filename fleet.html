@@ -139,6 +139,8 @@
     .card-defect-warn { font-size: 0.62rem; color: #e65100; font-weight: 600; }
     .card-redtag-reason { font-size: 0.62rem; color: #c62828; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-last-trip { font-size: 0.59rem; color: #7a8fa8; }
+    .card-pretrip-time { font-size: 0.59rem; color: #7a8fa8; }
+    .card-elapsed { font-size: 0.62rem; color: #4fc3f7; font-weight: 700; display: flex; align-items: center; gap: 3px; }
     .click-hint { font-size: 0.57rem; color: #aab8cc; text-align: right; margin-top: 1px; }
     .card-admin-update { background: rgba(245,124,0,0.12); border: 1px solid rgba(245,124,0,0.3); border-radius: 5px; padding: 4px 6px; margin-top: 3px; }
     .card-admin-update-header { font-size: 0.58rem; font-weight: 700; color: #fb8c00; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -262,7 +264,7 @@
   var _allTrucks = [], _truckMap = {}, _activeTab = 'Frankfort';
   var _typeFilters = { 'Frankfort': '', 'Lexington': '' };
   var _pollTimer = null, _countdownTimer = null, _nextPollAt = null, _isLoading = false;
-  var _lastKnownTimestamp = null;
+  var _lastKnownTimestamp = null, _clockTimer = null;
   var _params      = new URLSearchParams(window.location.search);
   var _lockedLoc   = (_params.get('location') || '').trim();
   var _lockedType  = (_params.get('type')     || '').trim();
@@ -392,6 +394,8 @@
       panesEl.appendChild(pane);
       renderPane(loc);
     });
+    updateElapsedTimes();
+    startClock();
   }
   function renderPane(loc) {
     var pane = document.getElementById('pane-' + safeCssId(loc));
@@ -483,6 +487,7 @@
 + '</div>'
       + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
       + '<div class="card-status s-green"><div class="dot"></div>In Use Today</div>'
+      + (t.preTrip && t.preTrip.submittedAt ? '<div class="card-pretrip-time">Pre-trip: ' + fmtTime(new Date(t.preTrip.submittedAt)) + '</div><div class="card-elapsed" data-pretrip-start="' + esc(t.preTrip.submittedAt) + '">⏱ ' + (fmtElapsed(t.preTrip.submittedAt) || '...') + '</div>' : '')
       + dr + def + '<div class="click-hint">tap for details</div></div>';
   }
   function buildIdleCard(t) {
@@ -563,7 +568,9 @@ var statusHtml = '';
       + '<div class="drawer-row"><span class="drawer-lbl">Type</span><span class="drawer-val">' + esc(t.type||'-') + '</span></div>'
       + '<div class="drawer-row"><span class="drawer-lbl">Location</span><span class="drawer-val">' + esc(aLoc) + (aLoc !== t.location ? ' <span style="font-size:0.7rem;color:#6b90b8">(home: ' + esc(t.location) + ')</span>' : '') + '</span></div>'
       + (t.vin ? '<div class="drawer-row"><span class="drawer-lbl">VIN</span><span class="drawer-val" style="font-size:0.75rem;word-break:break-all">' + esc(t.vin) + '</span></div>' : '')
-      + '<div class="drawer-row"><span class="drawer-lbl">Status</span><span class="drawer-val">' + statusHtml + '</span></div></div>';
+      + '<div class="drawer-row"><span class="drawer-lbl">Status</span><span class="drawer-val">' + statusHtml + '</span></div>'
+      + (t.status === 'in_use' && t.preTrip && t.preTrip.submittedAt ? '<div class="drawer-row"><span class="drawer-lbl">Pre-trip</span><span class="drawer-val">' + esc(fmtTime(new Date(t.preTrip.submittedAt))) + '</span></div><div class="drawer-row"><span class="drawer-lbl">On clock</span><span class="drawer-val" style="color:#4fc3f7;font-weight:700" data-pretrip-start="' + esc(t.preTrip.submittedAt) + '">⏱ ' + (fmtElapsed(t.preTrip.submittedAt) || '...') + '</span></div>' : '')
+      + '</div>';
     if (t.status==='in_use' && t.currentDriver) {
       var isTemp=t.driverAssigned===false, isAssigned=t.driverAssigned===true;
       var avCls=isTemp?'temp-av':'assigned-av';
@@ -699,6 +706,24 @@ var statusHtml = '';
     if (!link) return null;
     var m = link.match(/\/d\/([a-zA-Z0-9_-]+)/) || link.match(/[?&]id=([a-zA-Z0-9_-]+)/);
     return m ? 'https://lh3.googleusercontent.com/d/' + m[1] : null;
+  }
+  function fmtElapsed(isoStr) {
+    if (!isoStr) return null;
+    var ms = Date.now() - new Date(isoStr).getTime();
+    if (isNaN(ms) || ms < 0) return null;
+    var h = Math.floor(ms / 3600000);
+    var m = Math.floor((ms % 3600000) / 60000);
+    return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
+  }
+  function updateElapsedTimes() {
+    document.querySelectorAll('[data-pretrip-start]').forEach(function(el) {
+      var e = fmtElapsed(el.getAttribute('data-pretrip-start'));
+      if (e) el.textContent = '⏱ ' + e;
+    });
+  }
+  function startClock() {
+    if (_clockTimer) return;
+    _clockTimer = setInterval(updateElapsedTimes, 30000);
   }
   function fmtTime(d) { var h=d.getHours(),m=d.getMinutes(),ap=h<12?'AM':'PM'; h=h%12||12; return h+':'+(m<10?'0':'')+m+' '+ap; }
   function fmtDate(iso) { if(!iso)return''; var d=new Date(iso+'T00:00:00'); if(isNaN(d))return iso; return (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2); }
