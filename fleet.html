@@ -136,6 +136,8 @@
     .card-compact { padding: 5px 8px; }
     .card-compact > *:not(.card-top-row) { display: none; }
     .card-compact .card-front-thumb { display: none; }
+    /* thumbnail hidden at mid-size cards, restored when cards grow large enough */
+    .card-no-thumb .card-front-thumb { display: none; }
     #drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; }
     #drawer-backdrop.open { display: block; }
     #drawer { position: fixed; top: 0; right: -440px; width: 420px; max-width: 96vw; height: 100vh; background: #0e1a2e; border-left: 2px solid #2a4a7f; z-index: 301; overflow-y: auto; transition: right 0.3s ease; box-shadow: -4px 0 24px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
@@ -453,6 +455,7 @@
     var cardW = Math.floor((availW - GAP * (bestCols - 1)) / bestCols);
     var cardH = Math.floor((availH - GAP * (rows    - 1)) / rows);
     var compact = cardH < 65;
+    var noThumb = cardH < 110 || cardW < 130;
 
     gridEl.style.gridTemplateColumns = 'repeat(' + bestCols + ', ' + cardW + 'px)';
     gridEl.style.gridTemplateRows    = 'repeat(' + rows    + ', ' + cardH + 'px)';
@@ -464,6 +467,7 @@
       card.style.height   = cardH + 'px';
       card.style.overflow = 'hidden';
       card.classList.toggle('card-compact', compact);
+      card.classList.toggle('card-no-thumb', !compact && noThumb);
     });
   }
 
