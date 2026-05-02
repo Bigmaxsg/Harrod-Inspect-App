@@ -100,6 +100,10 @@
     .card-admin-update-comment { font-size: 0.62rem; color: #ffcc80; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
     .card-admin-update-more { font-size: 0.55rem; color: #f57c00; margin-top: 2px; }
 
+    /* compact mode — only truck # + type chip visible */
+    .card-compact { padding: 5px 8px; }
+    .card-compact > *:not(.card-top-row) { display: none; }
+
     /* ── Drawer ── */
     #drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; }
     #drawer-backdrop.open { display: block; }
@@ -327,7 +331,63 @@
       + '<div class="section-block">' + buildSection('red',    'RED TAGGED',   redtag, buildRedTagCard) + '</div>'
       + '</div>';
     inner.innerHTML = sum + wrap;
+    requestAnimationFrame(function() { requestAnimationFrame(fitAllGrids); });
   }
+
+  function fitGridToSection(gridEl) {
+    var cards = Array.from(gridEl.querySelectorAll('.truck-card'));
+    var N = cards.length;
+    // Reset any previous fit
+    gridEl.style.gridTemplateColumns = '';
+    gridEl.style.gridTemplateRows = '';
+    gridEl.style.overflowY = '';
+    cards.forEach(function(c) { c.style.width = ''; c.style.height = ''; c.style.overflow = ''; });
+    if (!N) return;
+
+    var GAP = 7, PAD = 8;
+    var availW = gridEl.clientWidth  - PAD * 2;
+    var availH = gridEl.clientHeight - PAD * 2;
+    if (availW < 20 || availH < 20) return;
+
+    // Find column count that maximises the minimum card dimension (largest cards that still all fit)
+    var bestCols = 1, bestMin = 0;
+    for (var c = 1; c <= N; c++) {
+      var r = Math.ceil(N / c);
+      var w = (availW - GAP * (c - 1)) / c;
+      var h = (availH - GAP * (r - 1)) / r;
+      if (w <= 0 || h <= 0) continue;
+      var m = Math.min(w, h);
+      if (m > bestMin) { bestMin = m; bestCols = c; }
+    }
+
+    var rows  = Math.ceil(N / bestCols);
+    var cardW = Math.floor((availW - GAP * (bestCols - 1)) / bestCols);
+    var cardH = Math.floor((availH - GAP * (rows    - 1)) / rows);
+
+    gridEl.style.gridTemplateColumns = 'repeat(' + bestCols + ', ' + cardW + 'px)';
+    gridEl.style.gridTemplateRows    = 'repeat(' + rows    + ', ' + cardH + 'px)';
+    gridEl.style.overflowY  = 'hidden';
+    gridEl.style.alignContent = 'start';
+
+    // Below 65px height only truck # + type chip guaranteed visible; hide everything else
+    var compact = cardH < 65;
+    cards.forEach(function(card) {
+      card.style.width    = cardW + 'px';
+      card.style.height   = cardH + 'px';
+      card.style.overflow = 'hidden';
+      card.classList.toggle('card-compact', compact);
+    });
+  }
+
+  function fitAllGrids() {
+    document.querySelectorAll('#panes .card-grid').forEach(fitGridToSection);
+  }
+
+  var _resizeTimer = null;
+  window.addEventListener('resize', function() {
+    clearTimeout(_resizeTimer);
+    _resizeTimer = setTimeout(function() { renderPane(_lockedLoc); }, 150);
+  });
 
   function si(color, label) {
     return '<div class="summary-item"><div class="summary-dot" style="background:' + color + ';box-shadow:0 0 4px ' + color + '"></div><span>' + esc(label) + '</span></div>';
