@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Harrod Fleet — Fit View</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0e1a2e; color: #f0f4f8; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+    #top-bar { flex-shrink: 0; background: linear-gradient(135deg, #1c2e4a 0%, #0e1a2e 100%); border-bottom: 2px solid #2a4a7f; padding: 5px 16px; display: flex; align-items: center; justify-content: space-between; z-index: 200; box-shadow: 0 2px 12px rgba(0,0,0,0.4); }
+    #top-bar-left { display: flex; align-items: center; gap: 8px; }
+    #top-bar h1 { font-size: 1rem; font-weight: 700; color: #fff; }
+    #top-bar h1 span { color: #4fc3f7; }
+    #fleet-icon { height: 44px; width: auto; flex-shrink: 0; mix-blend-mode: screen; }
+    #harrod-logo { height: 26px; width: auto; flex-shrink: 0; filter: brightness(0) invert(1); }
+    #top-bar-right { display: flex; align-items: center; gap: 10px; }
+    #refresh-info { font-size: 0.7rem; color: #8fa8c8; text-align: right; }
+    #last-updated { display: block; }
+    #next-refresh { display: block; color: #6b90b8; font-size: 0.64rem; }
+    #refresh-btn { background: #1565c0; color: #fff; border: none; border-radius: 7px; padding: 5px 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+    #refresh-btn:hover { background: #1976d2; }
+    #refresh-btn.spinning svg { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #main-content { flex: 1; min-height: 0; padding: 6px 10px; overflow: hidden; }
+    #loading-overlay { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 14px; }
+    .spinner { width: 36px; height: 36px; border: 4px solid rgba(79,195,247,0.2); border-top-color: #4fc3f7; border-radius: 50%; animation: spin 0.8s linear infinite; }
+    .loading-txt { color: #8fa8c8; font-size: 0.85rem; }
+    #error-msg { display: none; background: #3e1010; border: 1px solid #c62828; color: #ef9a9a; border-radius: 10px; padding: 12px 16px; font-size: 0.85rem; }
+    .location-pane { display: none; }
+    .location-pane.active { display: block; }
+    .summary-bar { display: flex; gap: 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 7px; padding: 5px 12px; margin-bottom: 6px; flex-wrap: wrap; }
+    .summary-item { display: flex; align-items: center; gap: 5px; font-size: 0.74rem; }
+    .summary-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .sections-wrap { display: grid; grid-template-columns: 5fr 3fr 2fr; gap: 8px; width: 100%; }
+    .section-block { min-width: 0; display: flex; flex-direction: column; }
+    .section-header { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 7px 7px 0 0; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.04em; }
+    .section-header.green  { background: #1b3d1e; color: #a5d6a7; border-bottom: 2px solid #2e7d32; }
+    .section-header.yellow { background: #3d3000; color: #fff176; border-bottom: 2px solid #f9a825; }
+    .section-header.red    { background: #3e1010; color: #ef9a9a; border-bottom: 2px solid #c62828; }
+    .col-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .col-dot.green  { background: #66bb6a; box-shadow: 0 0 5px #66bb6a; }
+    .col-dot.yellow { background: #ffee58; box-shadow: 0 0 5px #ffee58; }
+    .col-dot.red    { background: #ef5350; box-shadow: 0 0 5px #ef5350; }
+    .col-count { margin-left: auto; font-size: 0.68rem; opacity: 0.7; }
+    .card-grid { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-top: none; border-radius: 0 0 7px 7px; padding: 6px; min-height: 40px; display: grid; gap: 5px; align-items: start; }
+    .card-grid-iu  { grid-template-columns: repeat(5, 1fr); }
+    .card-grid-niu { grid-template-columns: repeat(3, 1fr); }
+    .card-grid-rt  { grid-template-columns: repeat(2, 1fr); }
+    .col-empty { text-align: center; padding: 14px 6px; color: #4a6080; font-size: 0.74rem; font-style: italic; grid-column: 1 / -1; }
+    .truck-card { background: #fff; border-radius: 7px; padding: 7px 8px 6px; color: #1a2535; box-shadow: 0 1px 5px rgba(0,0,0,0.2); border-left: 3px solid #ccc; display: flex; flex-direction: column; gap: 3px; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; width: 100%; }
+    .truck-card:hover { transform: translateY(-2px); box-shadow: 0 3px 12px rgba(0,0,0,0.32); }
+    .truck-card.inuse  { border-left-color: #43a047; }
+    .truck-card.idle   { border-left-color: #f9a825; }
+    .truck-card.redtag { border-left-color: #ef5350; }
+    .card-top-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 4px; width: 100%; }
+    .card-num-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; flex: 1; }
+    .card-num { font-size: 1.05rem; font-weight: 900; color: #0d2a5e; line-height: 1; }
+    .card-type-chip { font-size: 0.56rem; font-weight: 700; padding: 1px 4px; border-radius: 6px; background: #e8edf8; color: #3a5a8c; flex-shrink: 0; white-space: nowrap; }
+    .card-make { font-size: 0.62rem; color: #5a6e8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-status { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; border-radius: 10px; font-size: 0.59rem; font-weight: 700; width: fit-content; }
+    .card-status .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+    .s-green  { background: #e8f5e9; color: #2e7d32; } .s-green .dot  { background: #43a047; }
+    .s-yellow { background: #fff8e1; color: #e65100; } .s-yellow .dot { background: #f9a825; }
+    .s-red    { background: #ffebee; color: #c62828; } .s-red .dot    { background: #ef5350; }
+    .card-driver-row { display: flex; align-items: center; gap: 5px; border-radius: 4px; padding: 3px 5px; margin: 0 -1px; }
+    .card-driver-row.assigned { background: #e3f2fd; }
+    .card-driver-row.temp     { background: #fff3e0; border: 1px solid #ffcc80; }
+    .driver-mini-avatar { width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 0.56rem; font-weight: 700; color: #fff; }
+    .driver-mini-avatar.assigned-av { background: #1565c0; }
+    .driver-mini-avatar.temp-av     { background: #e65100; }
+    .driver-mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .driver-name-col { flex: 1; min-width: 0; }
+    .driver-name-text { font-size: 0.68rem; font-weight: 700; color: #1a2535; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+    .driver-label-text { font-size: 0.55rem; color: #7a8fa8; line-height: 1.2; }
+    .temp-flag { font-size: 0.52rem; font-weight: 700; color: #e65100; display: block; }
+    .card-defect-ok   { font-size: 0.58rem; color: #2e7d32; font-weight: 600; }
+    .card-defect-warn { font-size: 0.58rem; color: #e65100; font-weight: 600; }
+    .card-redtag-reason { font-size: 0.58rem; color: #c62828; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-last-trip { font-size: 0.55rem; color: #7a8fa8; }
+    .card-pretrip-time { font-size: 0.55rem; color: #7a8fa8; }
+    .card-elapsed { font-size: 0.58rem; color: #4fc3f7; font-weight: 700; display: flex; align-items: center; gap: 2px; }
+    .card-admin-update { background: rgba(245,124,0,0.12); border: 1px solid rgba(245,124,0,0.3); border-radius: 4px; padding: 3px 5px; margin-top: 2px; }
+    .card-admin-update-header { font-size: 0.54rem; font-weight: 700; color: #fb8c00; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-admin-update-comment { font-size: 0.58rem; color: #ffcc80; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
+    #drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; }
+    #drawer-backdrop.open { display: block; }
+    #drawer { position: fixed; top: 0; right: -440px; width: 420px; max-width: 96vw; height: 100vh; background: #0e1a2e; border-left: 2px solid #2a4a7f; z-index: 301; overflow-y: auto; transition: right 0.3s ease; box-shadow: -4px 0 24px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+    #drawer.open { right: 0; }
+    #drawer-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 18px 20px 14px; border-bottom: 1px solid #1e3052; background: #111d2e; flex-shrink: 0; }
+    #drawer-title { font-size: 1.4rem; font-weight: 900; color: #4fc3f7; }
+    #drawer-subtitle { font-size: 0.82rem; color: #8fa8c8; margin-top: 3px; }
+    #drawer-close { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #cdd5e0; border-radius: 6px; padding: 6px 10px; font-size: 1rem; cursor: pointer; flex-shrink: 0; transition: background 0.2s; }
+    #drawer-close:hover { background: rgba(255,255,255,0.18); }
+    #drawer-body { padding: 18px 20px; flex: 1; display: flex; flex-direction: column; gap: 16px; }
+    .drawer-section { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 14px; }
+    .drawer-section-title { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4fc3f7; margin-bottom: 10px; }
+    .drawer-row { display: flex; gap: 10px; margin-bottom: 7px; font-size: 0.82rem; }
+    .drawer-row:last-child { margin-bottom: 0; }
+    .drawer-truck-photo-wrap { width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; }
+    .drawer-truck-photo { width: 100%; max-height: 220px; object-fit: cover; object-position: center center; display: block; }
+    .drawer-lbl { color: #6b90b8; font-weight: 600; min-width: 90px; flex-shrink: 0; }
+    .drawer-val { color: #e0e8f4; font-weight: 500; }
+    .drawer-val.bold { font-weight: 800; color: #fff; }
+    .drawer-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 16px; font-size: 0.78rem; font-weight: 700; }
+    .drawer-status .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .ds-green  { background: #1b3d1e; color: #a5d6a7; } .ds-green .dot  { background: #66bb6a; }
+    .ds-yellow { background: #3d3000; color: #fff176; } .ds-yellow .dot { background: #ffee58; }
+    .ds-red    { background: #3e1010; color: #ef9a9a; } .ds-red .dot    { background: #ef5350; }
+    .drawer-driver-card { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 12px; }
+    .drawer-driver-card.temp-card { background: rgba(230,81,0,0.12); border: 1px solid rgba(230,81,0,0.3); }
+    .drawer-driver-card.assigned-card { background: rgba(21,101,192,0.12); border: 1px solid rgba(21,101,192,0.3); }
+    .drawer-avatar { width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; color: #fff; }
+    .drawer-avatar.assigned-av { background: #1565c0; }
+    .drawer-avatar.temp-av     { background: #e65100; }
+    .drawer-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .drawer-driver-info { flex: 1; min-width: 0; }
+    .drawer-driver-name { font-size: 0.95rem; font-weight: 800; color: #fff; }
+    .drawer-driver-meta { font-size: 0.72rem; color: #8fa8c8; margin-top: 2px; }
+    .assign-pill { display: inline-block; padding: 2px 9px; border-radius: 10px; font-size: 0.68rem; font-weight: 700; margin-top: 4px; }
+    .assign-pill.assigned { background: #1565c0; color: #fff; }
+    .assign-pill.temp     { background: #e65100; color: #fff; }
+    .defect-item { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.06); font-size: 0.8rem; color: #cdd5e0; }
+    .defect-item:last-child { border-bottom: none; }
+    .defect-dot { width: 7px; height: 7px; border-radius: 50%; background: #ef5350; flex-shrink: 0; margin-top: 4px; }
+    .defect-fixed-dot { background: #43a047; }
+    .defect-none { color: #4a6080; font-style: italic; font-size: 0.8rem; }
+    .defect-label-list { margin: 6px 0 0 4px; padding: 0; list-style: none; }
+    .defect-label-list li { font-size: 0.77rem; color: #cdd5e0; padding: 2px 0; line-height: 1.4; }
+    .defect-label-list li::before { content: "– "; color: #6b90b8; }
+    .defect-driver-note { font-size: 0.73rem; color: #8fa8c8; font-style: italic; margin-top: 6px; padding-left: 2px; }
+    .corrections-summary { margin-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px; }
+    .correction-summary-line { font-size: 0.75rem; color: #a5d6a7; padding: 2px 0; }
+    .redtag-detail-box { background: rgba(239,83,80,0.08); border: 1px solid rgba(239,83,80,0.25); border-radius: 8px; padding: 12px; }
+    .redtag-detail-reason { font-size: 0.88rem; color: #ef9a9a; font-weight: 600; margin-bottom: 8px; }
+    .redtag-detail-meta { font-size: 0.75rem; color: #8fa8c8; }
+  </style>
+</head>
+<body>
+<div id="top-bar">
+  <div id="top-bar-left">
+    <img src="./Harrod%20app%20fleet%20view%20icon.png" id="fleet-icon" alt="Fleet">
+    <img src="./Harrod_Concrete_BlueLogo_TransparentBkgrd.png" id="harrod-logo" alt="Harrod Concrete &amp; Stone">
+    <h1><span id="page-title">Fleet Live View</span></h1>
+  </div>
+  <div id="top-bar-right">
+    <div id="refresh-info">
+      <span id="last-updated">Loading...</span>
+      <span id="next-refresh"></span>
+    </div>
+    <button id="refresh-btn" onclick="manualRefresh()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M23 4v6h-6"/><path d="M1 20v-6h6"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      Refresh
+    </button>
+  </div>
+</div>
+<div id="main-content">
+  <div id="loading-overlay"><div class="spinner"></div><div class="loading-txt">Loading fleet data...</div></div>
+  <div id="error-msg"></div>
+  <div id="panes"></div>
+</div>
+<div id="drawer-backdrop" onclick="closeDrawer()"></div>
+<div id="drawer">
+  <div id="drawer-header">
+    <div>
+      <div id="drawer-title">Truck #-</div>
+      <div id="drawer-subtitle"></div>
+    </div>
+    <button id="drawer-close" onclick="closeDrawer()">&#x2715;</button>
+  </div>
+  <div id="drawer-body"></div>
+</div>
+<script>
+  var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec';
+  var POLL_INTERVAL = 30 * 1000;
+  var LOCATIONS   = ['Frankfort', 'Lexington'];
+  var TRUCK_TYPES = ['Concrete Mixer', 'Dump Truck', 'Tractor'];
+  var _allTrucks = [], _truckMap = {}, _activeTab = 'Frankfort';
+  var _typeFilters = { 'Frankfort': '', 'Lexington': '' };
+  var _pollTimer = null, _countdownTimer = null, _nextPollAt = null, _isLoading = false;
+  var _lastKnownTimestamp = null, _clockTimer = null;
+  var _params    = new URLSearchParams(window.location.search);
+  var _lockedLoc = (_params.get('location') || 'Frankfort').trim();
+  var _lockedType = (_params.get('type') || '').trim();
+
+  window.addEventListener('load', function() {
+    _activeTab = _lockedLoc;
+    if (_lockedType) _typeFilters[_lockedLoc] = _lockedType;
+    var titleParts = [_lockedLoc];
+    var lockedTypes = _lockedType ? _lockedType.split(',').map(function(s){return s.trim();}) : [];
+    if (lockedTypes.length === 1) titleParts.push(lockedTypes[0] + 's');
+    else if (lockedTypes.length > 1) titleParts.push(lockedTypes.map(function(s){return s+'s';}).join(' & '));
+    document.getElementById('page-title').textContent = titleParts.join(' — ') + ' · Fit View';
+    loadFleetData();
+  });
+
+  window.addEventListener('resize', function() { fitToScreen(); });
+
+  function loadFleetData() {
+    if (_isLoading) return;
+    _isLoading = true;
+    document.getElementById('refresh-btn').classList.add('spinning');
+    document.getElementById('last-updated').textContent = 'Refreshing...';
+    fetch(GAS_URL + '?action=fleetData')
+      .then(function(r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function(data) {
+        _isLoading = false;
+        document.getElementById('refresh-btn').classList.remove('spinning');
+        if (!data.success) throw new Error(data.message || 'Server error');
+        document.getElementById('loading-overlay').style.display = 'none';
+        document.getElementById('error-msg').style.display = 'none';
+        if (data.lastModified) _lastKnownTimestamp = data.lastModified;
+        renderAll(data.trucks || []);
+        document.getElementById('last-updated').textContent = 'Updated ' + fmtTime(new Date());
+        schedulePoll();
+      })
+      .catch(function(err) {
+        _isLoading = false;
+        document.getElementById('refresh-btn').classList.remove('spinning');
+        document.getElementById('loading-overlay').style.display = 'none';
+        var em = document.getElementById('error-msg');
+        em.style.display = 'block';
+        em.textContent = 'Could not load fleet data: ' + err.message;
+        schedulePoll();
+      });
+  }
+
+  function pollForChanges() {
+    fetch(GAS_URL + '?action=lastModified')
+      .then(function(r) { if (!r.ok) throw new Error(); return r.json(); })
+      .then(function(data) {
+        if (data.lastModified && data.lastModified !== _lastKnownTimestamp) {
+          loadFleetData();
+        } else {
+          schedulePoll();
+        }
+      })
+      .catch(function() { schedulePoll(); });
+  }
+
+  function manualRefresh() {
+    clearTimeout(_pollTimer); clearInterval(_countdownTimer);
+    document.getElementById('next-refresh').textContent = '';
+    loadFleetData();
+  }
+
+  function schedulePoll() {
+    clearTimeout(_pollTimer); clearInterval(_countdownTimer);
+    _nextPollAt = Date.now() + POLL_INTERVAL;
+    _pollTimer = setTimeout(function() { pollForChanges(); }, POLL_INTERVAL);
+    _countdownTimer = setInterval(function() {
+      var s = Math.max(0, Math.round((_nextPollAt - Date.now()) / 1000));
+      document.getElementById('next-refresh').textContent = 'Checking in ' + s + 's';
+      if (s <= 0) clearInterval(_countdownTimer);
+    }, 1000);
+  }
+
+  function safeCssId(s) { return s.replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_]/g,''); }
+
+  function sortTrucks(arr) {
+    return arr.slice().sort(function(a, b) {
+      var na = parseFloat(a.truckNumber), nb = parseFloat(b.truckNumber);
+      if (!isNaN(na) && !isNaN(nb)) return nb - na;
+      return (b.truckNumber || '').localeCompare(a.truckNumber || '');
+    });
+  }
+
+  function activeLoc(t) {
+    return t.currentLocation || (t.status === 'in_use' && t.preTrip && t.preTrip.location) || t.location;
+  }
+
+  function fitToScreen() {
+    var content = document.getElementById('main-content');
+    if (!content) return;
+    content.style.zoom = '';
+    var topH = document.getElementById('top-bar').offsetHeight;
+    var availH = window.innerHeight - topH - 12;
+    var actualH = content.scrollHeight;
+    if (actualH > availH) {
+      content.style.zoom = availH / actualH;
+    }
+  }
+
+  function renderAll(trucks) {
+    _allTrucks = trucks; _truckMap = {};
+    trucks.forEach(function(t) { _truckMap[t.truckNumber] = t; });
+    var panesEl = document.getElementById('panes');
+    panesEl.innerHTML = '';
+    var pane = document.createElement('div');
+    pane.className = 'location-pane active';
+    pane.id = 'pane-' + safeCssId(_lockedLoc);
+    pane.innerHTML = '<div class="pane-inner"></div>';
+    panesEl.appendChild(pane);
+    renderPane(_lockedLoc);
+    updateElapsedTimes();
+    startClock();
+    setTimeout(fitToScreen, 50);
+  }
+
+  function renderPane(loc) {
+    var pane = document.getElementById('pane-' + safeCssId(loc));
+    if (!pane) return;
+    var inner = pane.querySelector('.pane-inner');
+    if (!inner) return;
+    var af = _typeFilters[loc] || '';
+    var afTypes = af ? af.split(',').map(function(s){return s.trim().toLowerCase();}) : [];
+    var lt = _allTrucks.filter(function(t) { return activeLoc(t) === loc; });
+    var filtered = afTypes.length === 0 ? lt : lt.filter(function(t) {
+      return afTypes.indexOf((t.type || '').trim().toLowerCase()) !== -1;
+    });
+    var inUse  = sortTrucks(filtered.filter(function(t) { return t.status === 'in_use'; }));
+    var idle   = sortTrucks(filtered.filter(function(t) { return t.status === 'not_in_use'; }));
+    var redtag = sortTrucks(filtered.filter(function(t) { return t.status === 'red_tagged'; }));
+    var fl = af ? ' · ' + af + 's' : '';
+    var sum = '<div class="summary-bar">'
+      + si('#66bb6a', inUse.length  + ' In Use')
+      + si('#ffee58', idle.length   + ' Not In Use')
+      + si('#ef5350', redtag.length + ' Red Tagged')
+      + si('#4fc3f7', filtered.length + ' Total' + fl)
+      + '</div>';
+    var wrap = '<div class="sections-wrap">'
+      + '<div class="section-block">' + buildSection('green',  'IN USE TODAY', inUse,  buildInUseCard,  'card-grid-iu')  + '</div>'
+      + '<div class="section-block">' + buildSection('yellow', 'NOT IN USE',   idle,   buildIdleCard,   'card-grid-niu') + '</div>'
+      + '<div class="section-block">' + buildSection('red',    'RED TAGGED',   redtag, buildRedTagCard, 'card-grid-rt')  + '</div>'
+      + '</div>';
+    inner.innerHTML = sum + wrap;
+  }
+
+  function si(color, label) {
+    return '<div class="summary-item"><div class="summary-dot" style="background:' + color + ';box-shadow:0 0 4px ' + color + '"></div><span>' + esc(label) + '</span></div>';
+  }
+
+  function buildSection(color, title, trucks, cardFn, gridClass) {
+    var header = '<div class="section-header ' + color + '"><div class="col-dot ' + color + '"></div>' + esc(title) + '<span class="col-count">' + trucks.length + '</span></div>';
+    var body = trucks.length === 0 ? '<div class="col-empty">None right now</div>' : trucks.map(cardFn).join('');
+    return header + '<div class="card-grid ' + gridClass + '">' + body + '</div>';
+  }
+
+  function typeChip(type) {
+    var s = (type||'').replace('Concrete Mixer','Mixer').replace('Dump Truck','Dump');
+    return '<span class="card-type-chip">' + esc(s) + '</span>';
+  }
+
+  function driverRowHTML(name, photo, isAssigned, label) {
+    var assigned = isAssigned === true, temp = isAssigned === false;
+    var cls = temp ? 'temp' : (assigned ? 'assigned' : '');
+    var avCls = temp ? 'temp-av' : 'assigned-av';
+    var initials = (name||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    var avatar = photo
+      ? '<div class="driver-mini-avatar ' + avCls + '"><img src="' + photo + '" alt=""></div>'
+      : '<div class="driver-mini-avatar ' + avCls + '">' + esc(initials) + '</div>';
+    var tempLine = temp ? '<span class="temp-flag">Temp Truck</span>' : '';
+    return '<div class="card-driver-row ' + cls + '">' + avatar
+      + '<div class="driver-name-col"><div class="driver-name-text">' + esc(name) + '</div>'
+      + '<div class="driver-label-text">' + esc(label) + tempLine + '</div></div></div>';
+  }
+
+  function buildInUseCard(t) {
+    var dr = t.currentDriver ? driverRowHTML(t.currentDriver, t.driverPhoto, t.driverAssigned, 'Driver') : '';
+    var def = '';
+    if (t.preTrip) {
+      var ptCorr = Array.isArray(t.preTrip.corrections) ? t.preTrip.corrections : [];
+      var ptCorrTotal = ptCorr.reduce(function(s, c) { return s + (c.defectsCorrected || 0); }, 0);
+      var ptAllFixed = t.preTrip.openDefectCount === 0 || (ptCorr.length > 0 && ptCorrTotal >= (t.preTrip.defectCount || 0));
+      if (!t.preTrip.hasDefects) {
+        def = '<div class="card-defect-ok">No defects</div>';
+      } else if (ptAllFixed) {
+        def = '<div class="card-defect-ok">✓ All defects corrected</div>';
+      } else {
+        var oc = t.preTrip.openDefectCount !== undefined ? t.preTrip.openDefectCount : t.preTrip.defectCount;
+        def = '<div class="card-defect-warn">⚠ ' + oc + ' open defect(s)</div>';
+      }
+    }
+    return '<div class="truck-card inuse" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
+      + '<div class="card-top-row"><div class="card-num-wrap"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div></div>'
+      + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
+      + '<div class="card-status s-green"><div class="dot"></div>In Use</div>'
+      + (t.preTrip && t.preTrip.submittedAt ? '<div class="card-pretrip-time">Pre-trip: ' + fmtTime(new Date(t.preTrip.submittedAt)) + '</div><div class="card-elapsed" data-pretrip-start="' + esc(t.preTrip.submittedAt) + '">⏱ ' + (fmtElapsed(t.preTrip.submittedAt) || '...') + '</div>' : '')
+      + dr + def + '</div>';
+  }
+
+  function buildIdleCard(t) {
+    var dr = t.lastDriver ? driverRowHTML(t.lastDriver, t.lastDriverPhoto, t.lastDriverAssigned, 'Last Driver') : '';
+    var def = '';
+    if (!t.lastTrip) {
+      def = '<div class="card-defect-ok">No history yet</div>';
+    } else if (t.lastTrip.postTripDone === false) {
+      def = '<div class="card-defect-warn" style="color:#e65100;background:#fff3e0;border-radius:4px;padding:1px 4px;">⚠ No post-trip</div>';
+    } else if (!t.lastTrip.hasDefects || t.lastTrip.defectCount === 0) {
+      def = '<div class="card-defect-ok">✅ No defects</div>';
+    } else if (t.lastTrip.postAllClear) {
+      var n = t.lastTrip.correctedDefectCount || t.lastTrip.defectCount;
+      def = '<div class="card-defect-ok">✅ ' + n + ' defect' + (n !== 1 ? 's' : '') + ' corrected</div>';
+    } else if (t.lastTrip.lastTripStatus === 'Complete') {
+      var r = t.lastTrip.remainingDefectCount || 0;
+      def = '<div class="card-defect-warn">⚠ ' + r + ' defect' + (r !== 1 ? 's' : '') + ' unresolved</div>';
+    } else {
+      var dc = t.lastTrip.defectCount || 0;
+      def = '<div class="card-defect-warn">⚠ ' + dc + ' defect' + (dc !== 1 ? 's' : '') + '</div>';
+    }
+    var lt = t.lastTripDate ? '<div class="card-last-trip">Last: ' + esc(fmtDate(t.lastTripDate)) + '</div>' : '';
+    return '<div class="truck-card idle" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
+      + '<div class="card-top-row"><div class="card-num-wrap"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div></div>'
+      + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
+      + '<div class="card-status s-yellow"><div class="dot"></div>Not In Use</div>'
+      + dr + def + lt + '</div>';
+  }
+
+  function buildRedTagCard(t) {
+    var r = t.redTag ? '<div class="card-redtag-reason">⛔ ' + esc(t.redTag.reason || 'No reason given') + '</div>' : '';
+    var by = t.redTag ? '<div class="card-last-trip">By: ' + esc(t.redTag.taggedBy) + '</div>' : '';
+    var adminUpdate = '';
+    if (t.redTag && Array.isArray(t.redTag.adminUpdates) && t.redTag.adminUpdates.length > 0) {
+      var latest = t.redTag.adminUpdates[t.redTag.adminUpdates.length - 1];
+      var earlier = t.redTag.adminUpdates.length - 1;
+      adminUpdate = '<div class="card-admin-update">'
+        + '<div class="card-admin-update-header">💬 ' + esc(latest.by) + (latest.at ? ' · ' + esc(fmtDate(latest.at)) : '') + '</div>'
+        + '<div class="card-admin-update-comment">' + esc(latest.comment) + '</div>'
+        + (earlier > 0 ? '<div style="font-size:0.52rem;color:#f57c00;margin-top:1px">+' + earlier + ' more</div>' : '')
+        + '</div>';
+    }
+    return '<div class="truck-card redtag" onclick="openDrawer(\'' + esc(t.truckNumber) + '\')">'
+      + '<div class="card-top-row"><div class="card-num-wrap"><span class="card-num">#' + esc(t.truckNumber) + '</span>' + typeChip(t.type) + '</div></div>'
+      + '<div class="card-make">' + esc(t.year + ' ' + t.make) + '</div>'
+      + '<div class="card-status s-red"><div class="dot"></div>Red Tagged</div>'
+      + r + by + adminUpdate + '</div>';
+  }
+
+  function openDrawer(truckNum) {
+    var t = _truckMap[truckNum];
+    if (!t) return;
+    document.getElementById('drawer-title').textContent = 'Truck #' + t.truckNumber;
+    var aLoc = activeLoc(t);
+    document.getElementById('drawer-subtitle').textContent = t.year + ' ' + t.make + ' - ' + (t.type||'') + ' - ' + aLoc;
+    var body = '';
+    var drawerPhotoSrc = driveImgUrl(t.photoFrontLink) || t.frontThumb || null;
+    if (drawerPhotoSrc) {
+      body += '<div class="drawer-truck-photo-wrap"><img class="drawer-truck-photo" src="' + drawerPhotoSrc + '" alt="Truck #' + esc(t.truckNumber) + '"></div>';
+    }
+    var statusHtml = '';
+    if (t.status==='in_use') statusHtml='<div class="drawer-status ds-green"><div class="dot"></div>In Use Today</div>';
+    else if (t.status==='not_in_use') statusHtml='<div class="drawer-status ds-yellow"><div class="dot"></div>Not In Use</div>';
+    else if (t.status==='red_tagged') statusHtml='<div class="drawer-status ds-red"><div class="dot"></div>Red Tagged</div>';
+    body += '<div class="drawer-section"><div class="drawer-section-title">Truck Info</div>'
+      + '<div class="drawer-row"><span class="drawer-lbl">Truck #</span><span class="drawer-val bold">' + esc(t.truckNumber) + '</span></div>'
+      + '<div class="drawer-row"><span class="drawer-lbl">Year / Make</span><span class="drawer-val">' + esc(t.year + ' ' + t.make) + '</span></div>'
+      + '<div class="drawer-row"><span class="drawer-lbl">Type</span><span class="drawer-val">' + esc(t.type||'-') + '</span></div>'
+      + '<div class="drawer-row"><span class="drawer-lbl">Location</span><span class="drawer-val">' + esc(aLoc) + (aLoc !== t.location ? ' <span style="font-size:0.7rem;color:#6b90b8">(home: ' + esc(t.location) + ')</span>' : '') + '</span></div>'
+      + (t.vin ? '<div class="drawer-row"><span class="drawer-lbl">VIN</span><span class="drawer-val" style="font-size:0.75rem;word-break:break-all">' + esc(t.vin) + '</span></div>' : '')
+      + '<div class="drawer-row"><span class="drawer-lbl">Status</span><span class="drawer-val">' + statusHtml + '</span></div>'
+      + (t.status === 'in_use' && t.preTrip && t.preTrip.submittedAt ? '<div class="drawer-row"><span class="drawer-lbl">Pre-trip</span><span class="drawer-val">' + esc(fmtTime(new Date(t.preTrip.submittedAt))) + '</span></div><div class="drawer-row"><span class="drawer-lbl">On clock</span><span class="drawer-val" style="color:#4fc3f7;font-weight:700" data-pretrip-start="' + esc(t.preTrip.submittedAt) + '">⏱ ' + (fmtElapsed(t.preTrip.submittedAt) || '...') + '</span></div>' : '')
+      + '</div>';
+    if (t.status==='in_use' && t.currentDriver) {
+      var isTemp=t.driverAssigned===false, isAssigned=t.driverAssigned===true;
+      var avCls=isTemp?'temp-av':'assigned-av';
+      var initials=t.currentDriver.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+      var avHtml=t.driverPhoto?'<div class="drawer-avatar '+avCls+'"><img src="'+t.driverPhoto+'" alt=""></div>':'<div class="drawer-avatar '+avCls+'">'+esc(initials)+'</div>';
+      var pillHtml=isTemp?'<span class="assign-pill temp">Temporary Assignment</span>':(isAssigned?'<span class="assign-pill assigned">Assigned Truck</span>':'');
+      body+='<div class="drawer-section"><div class="drawer-section-title">Current Driver</div><div class="drawer-driver-card '+(isTemp?'temp-card':'assigned-card')+'">'+avHtml+'<div class="drawer-driver-info"><div class="drawer-driver-name">'+esc(t.currentDriver)+'</div><div class="drawer-driver-meta">Driving today</div>'+pillHtml+'</div></div></div>';
+    }
+    if (t.lastDriver) {
+      var lTemp=t.lastDriverAssigned===false, lAssigned=t.lastDriverAssigned===true;
+      var lAvCls=lTemp?'temp-av':'assigned-av';
+      var lInitials=t.lastDriver.split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+      var lAvHtml=t.lastDriverPhoto?'<div class="drawer-avatar '+lAvCls+'"><img src="'+t.lastDriverPhoto+'" alt=""></div>':'<div class="drawer-avatar '+lAvCls+'">'+esc(lInitials)+'</div>';
+      var lPillHtml=lTemp?'<span class="assign-pill temp">Was Temporary</span>':(lAssigned?'<span class="assign-pill assigned">Assigned Truck</span>':'');
+      var lDateLine=t.lastTripDate?'<div class="drawer-driver-meta">Last trip: '+esc(fmtDate(t.lastTripDate))+'</div>':'';
+      body+='<div class="drawer-section"><div class="drawer-section-title">'+(t.status==='in_use'?'Previous Driver':'Last Driver')+'</div><div class="drawer-driver-card '+(lTemp?'temp-card':'assigned-card')+'">'+lAvHtml+'<div class="drawer-driver-info"><div class="drawer-driver-name">'+esc(t.lastDriver)+'</div>'+lDateLine+lPillHtml+'</div></div></div>';
+    }
+    var tripRec = t.status==='in_use' ? t.preTrip : t.lastTrip;
+    if (tripRec) {
+      var isPreTrip = t.status==='in_use';
+      var defectBody='';
+      if (isPreTrip) {
+        var openCount = tripRec.openDefectCount !== undefined ? tripRec.openDefectCount : null;
+        var corrections = Array.isArray(tripRec.corrections) ? tripRec.corrections : [];
+        var totalCorrected = corrections.reduce(function(sum, c) { return sum + (c.defectsCorrected || 0); }, 0);
+        var allFixed = openCount === 0 || (corrections.length > 0 && totalCorrected >= (tripRec.defectCount || 0));
+        if (!tripRec.hasDefects) {
+          defectBody='<div class="defect-none">No defects reported</div>';
+        } else {
+          if (allFixed) {
+            defectBody='<div class="defect-item"><div class="defect-dot defect-fixed-dot"></div><div style="color:#a5d6a7;font-weight:600">✓ All defects corrected</div></div>';
+          } else {
+            var showCount = openCount !== null ? openCount : tripRec.defectCount;
+            defectBody='<div class="defect-item"><div class="defect-dot"></div><div style="font-weight:600">'+esc(showCount+' open defect(s)')+'</div></div>';
+          }
+          var ptLabels = Array.isArray(tripRec.defectLabels) ? tripRec.defectLabels : [];
+          if (ptLabels.length > 0) {
+            defectBody+='<ul class="defect-label-list">';
+            ptLabels.forEach(function(lbl) { defectBody+='<li>'+esc(lbl)+'</li>'; });
+            defectBody+='</ul>';
+          }
+          if (corrections.length > 0) {
+            defectBody+='<div class="corrections-summary">';
+            corrections.forEach(function(c) {
+              defectBody+='<div class="correction-summary-line">🔧 '+esc((c.defectsCorrected||0)+' defect'+(c.defectsCorrected!==1?'s':'')+' corrected by '+c.correctorName)
+                +(c.correctorRole?' <span style="color:#6b90b8;font-size:0.7rem">('+esc(c.correctorRole)+')</span>':'')+'</div>';
+              if (c.notes || c.mechanicNotes) {
+                defectBody+='<div class="defect-driver-note" style="margin-left:16px;margin-top:2px">'+esc(c.notes || c.mechanicNotes)+'</div>';
+              }
+            });
+            defectBody+='</div>';
+          }
+        }
+        if (tripRec.defectsNotes) {
+          defectBody+='<div style="margin-top:8px;padding:7px 9px;background:rgba(79,195,247,0.06);border-radius:6px;border-left:2px solid #4fc3f7">'
+            +'<div style="font-size:0.67rem;font-weight:700;color:#4fc3f7;margin-bottom:3px;letter-spacing:0.04em">DRIVER NOTE</div>'
+            +'<div style="font-size:0.78rem;color:#cdd5e0">'+esc(tripRec.defectsNotes)+'</div></div>';
+        }
+      } else {
+        if (tripRec.postTripDone === false) {
+          defectBody='<div style="background:rgba(230,81,0,0.12);border:1px solid rgba(230,81,0,0.4);border-radius:7px;padding:10px 12px;margin-bottom:8px;">'
+            +'<div style="font-size:0.8rem;font-weight:700;color:#ff8a65;">⚠ Post-trip inspection not submitted</div>'
+            +'<div style="font-size:0.73rem;color:#ffb59d;margin-top:3px;">Driver did not complete a post-trip DVIR for this shift.</div></div>';
+        }
+        if (!tripRec.hasDefects || tripRec.defectCount === 0) {
+          defectBody+='<div class="defect-none">✅ No defects reported</div>';
+        } else if (tripRec.postAllClear) {
+          var ltN = tripRec.correctedDefectCount || tripRec.defectCount;
+          defectBody+='<div class="defect-item"><div class="defect-dot defect-fixed-dot"></div><div style="color:#a5d6a7;font-weight:600">✅ '+esc(ltN+' defect'+(ltN!==1?'s':'')+' corrected end of shift')+'</div></div>';
+          var cLabels = Array.isArray(tripRec.correctedDefectLabels) ? tripRec.correctedDefectLabels : [];
+          if (cLabels.length > 0) { defectBody+='<ul class="defect-label-list">'; cLabels.forEach(function(lbl){defectBody+='<li>'+esc(lbl)+'</li>';}); defectBody+='</ul>'; }
+        } else if (tripRec.lastTripStatus === 'Complete') {
+          var ltR = tripRec.remainingDefectCount || 0;
+          defectBody+='<div class="defect-item"><div class="defect-dot"></div><div style="font-weight:600;color:#ffee58">⚠ '+esc(ltR+' defect'+(ltR!==1?'s':'')+' unresolved')+'</div></div>';
+          var rLabels = Array.isArray(tripRec.remainingDefectLabels) ? tripRec.remainingDefectLabels : [];
+          if (rLabels.length > 0) { defectBody+='<ul class="defect-label-list">'; rLabels.forEach(function(lbl){defectBody+='<li>'+esc(lbl)+'</li>';}); defectBody+='</ul>'; }
+          var ltCC = tripRec.correctedDefectCount || 0;
+          if (ltCC > 0) {
+            var ccLabels = Array.isArray(tripRec.correctedDefectLabels) ? tripRec.correctedDefectLabels : [];
+            defectBody+='<div class="defect-driver-note">✓ '+esc(ltCC+' corrected: '+(ccLabels.length ? ccLabels.join(', ') : 'see details'))+'</div>';
+          }
+        } else {
+          var ltDC = tripRec.defectCount || 0;
+          defectBody+='<div class="defect-item"><div class="defect-dot"></div><div style="font-weight:600">'+esc(ltDC+' defect'+(ltDC!==1?'s':''))+'</div></div>';
+          var dLabels = Array.isArray(tripRec.defectLabels) ? tripRec.defectLabels : [];
+          if (dLabels.length > 0) { defectBody+='<ul class="defect-label-list">'; dLabels.forEach(function(lbl){defectBody+='<li>'+esc(lbl)+'</li>';}); defectBody+='</ul>'; }
+          if (tripRec.defectsNotes) { defectBody+='<div class="defect-driver-note">'+esc(tripRec.defectsNotes)+'</div>'; }
+        }
+      }
+      body+='<div class="drawer-section"><div class="drawer-section-title">'+(t.status==='in_use'?'Current Pre-Trip':'Last Trip Inspection')+'</div>'+defectBody+'</div>';
+    }
+    if (t.redTag) {
+      body+='<div class="drawer-section"><div class="drawer-section-title">Red Tag Details</div><div class="redtag-detail-box"><div class="redtag-detail-reason">⛔ '+esc(t.redTag.reason||'No reason specified')+'</div><div class="redtag-detail-meta">Tagged by: <strong>'+esc(t.redTag.taggedBy)+'</strong>'+(t.redTag.taggedByRole?' ('+esc(t.redTag.taggedByRole)+')':'')+'</div>'+(t.redTag.taggedAt?'<div class="redtag-detail-meta" style="margin-top:4px">Tagged: '+esc(fmtDateTime(t.redTag.taggedAt))+'</div>':'')+'</div><div style="margin-top:10px;font-size:0.78rem;color:#ef9a9a;font-weight:600">Out of service until red tag is resolved.</div></div>';
+    }
+    if (t.notes) {
+      body+='<div class="drawer-section"><div class="drawer-section-title">Truck Notes</div><div style="font-size:0.82rem;color:#cdd5e0">'+esc(t.notes)+'</div></div>';
+    }
+    document.getElementById('drawer-body').innerHTML = body;
+    document.getElementById('drawer-backdrop').classList.add('open');
+    document.getElementById('drawer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    updateElapsedTimes();
+  }
+
+  function closeDrawer() {
+    document.getElementById('drawer-backdrop').classList.remove('open');
+    document.getElementById('drawer').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', function(e) { if (e.key==='Escape') closeDrawer(); });
+
+  function fmtElapsed(isoStr) {
+    if (!isoStr) return null;
+    var ms = Date.now() - new Date(isoStr).getTime();
+    if (isNaN(ms) || ms < 0) return null;
+    var h = Math.floor(ms / 3600000);
+    var m = Math.floor((ms % 3600000) / 60000);
+    return h > 0 ? h + 'h ' + m + 'm' : m + 'm';
+  }
+
+  function updateElapsedTimes() {
+    document.querySelectorAll('[data-pretrip-start]').forEach(function(el) {
+      var e = fmtElapsed(el.getAttribute('data-pretrip-start'));
+      if (e) el.textContent = '⏱ ' + e;
+    });
+  }
+
+  function startClock() {
+    if (_clockTimer) return;
+    _clockTimer = setInterval(updateElapsedTimes, 30000);
+  }
+
+  function esc(s) {
+    return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
+  function driveImgUrl(link) {
+    if (!link) return null;
+    var m = link.match(/\/d\/([a-zA-Z0-9_-]+)/) || link.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    return m ? 'https://lh3.googleusercontent.com/d/' + m[1] : null;
+  }
+
+  function fmtTime(d) { var h=d.getHours(),m=d.getMinutes(),ap=h<12?'AM':'PM'; h=h%12||12; return h+':'+(m<10?'0':'')+m+' '+ap; }
+  function fmtDate(iso) { if(!iso)return''; var d=new Date(iso+'T00:00:00'); if(isNaN(d))return iso; return (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2); }
+  function fmtDateTime(ts) { if(!ts)return''; var d=new Date(ts); if(isNaN(d))return ts; return (d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2)+' '+fmtTime(d); }
+</script>
+</body>
+</html>
