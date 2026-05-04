@@ -6,6 +6,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --card-bg: #ffffff;
+      --card-inuse-border: #43a047; --card-idle-border: #f9a825; --card-redtag-border: #ef5350;
+      --card-num-size: 1.22rem; --card-num-weight: 900; --card-num-style: normal; --card-num-color: #0d2a5e;
+      --card-chip-size: 0.69rem; --card-chip-weight: 700; --card-chip-color: #3a5a8c; --card-chip-bg: #e8edf8;
+      --card-make-size: 0.77rem; --card-make-weight: 400; --card-make-style: normal; --card-make-color: #5a6e8a;
+      --driver-name-size: 0.82rem; --driver-name-weight: 700; --driver-name-style: normal; --driver-name-color: #1a2535;
+      --driver-label-size: 0.68rem; --driver-label-color: #7a8fa8;
+      --defect-size: 0.72rem; --defect-weight: 600; --defect-ok-color: #2e7d32; --defect-warn-color: #e65100;
+      --hint-size: 0.67rem; --hint-color: #aab8cc;
+      --truck-thumb-size: 84px; --driver-av-size: 44px;
+    }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #0e1a2e; color: #f0f4f8; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
     #main-content { flex: 1; min-height: 0; padding: 10px 14px; display: flex; flex-direction: column; overflow: hidden; }
     #panes { flex: 1; min-height: 0; display: flex; flex-direction: column; }
@@ -59,17 +71,19 @@
     .col-count { margin-left: auto; font-size: 0.72rem; opacity: 0.7; }
     .card-grid { flex: 1; min-height: 0; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-top: none; border-radius: 0 0 8px 8px; padding: 8px; display: grid; grid-template-columns: repeat(auto-fill, 158px); gap: 7px; align-content: start; overflow: hidden; }
     .col-empty { text-align: center; padding: 18px 8px; color: #4a6080; font-size: 0.78rem; font-style: italic; grid-column: 1 / -1; }
-    .truck-card { background: #fff; border-radius: 8px; padding: 9px 10px 8px; color: #1a2535; box-shadow: 0 1px 6px rgba(0,0,0,0.2); border-left: 3px solid #ccc; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; width: 158px; }
+    .truck-card { background: var(--card-bg); border-radius: 8px; padding: 9px 10px 8px; color: #1a2535; box-shadow: 0 1px 6px rgba(0,0,0,0.2); border-left: 3px solid #ccc; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; width: 158px; position: relative; }
     .truck-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.32); }
-    .truck-card.inuse  { border-left-color: #43a047; }
-    .truck-card.idle   { border-left-color: #f9a825; }
-    .truck-card.redtag { border-left-color: #ef5350; }
+    .truck-card.inuse  { border-left-color: var(--card-inuse-border); }
+    .truck-card.idle   { border-left-color: var(--card-idle-border); }
+    .truck-card.redtag { border-left-color: var(--card-redtag-border); }
    .card-top-row {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 6px;
   width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .card-num-wrap {
@@ -83,15 +97,16 @@
 }
 
 .card-front-thumb {
-  width: 42px !important;
-  height: 42px !important;
-  min-width: 42px !important;
-  max-width: 42px !important;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: var(--truck-thumb-size);
+  height: var(--truck-thumb-size);
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid #d5dde8;
   background: #eef3f8;
-  flex: 0 0 42px;
+  z-index: 0;
 }
 
 .card-front-thumb img {
@@ -101,32 +116,32 @@
   object-position: center center;
   display: block;
 }
-    .card-num { font-size: 1.22rem; font-weight: 900; color: #0d2a5e; line-height: 1; }
-    .card-type-chip { font-size: 0.69rem; font-weight: 700; padding: 2px 5px; border-radius: 7px; background: #e8edf8; color: #3a5a8c; flex-shrink: 0; white-space: nowrap; }
-    .card-make { font-size: 0.77rem; color: #5a6e8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-num { font-size: var(--card-num-size); font-weight: var(--card-num-weight); font-style: var(--card-num-style); color: var(--card-num-color); line-height: 1; }
+    .card-type-chip { font-size: var(--card-chip-size); font-weight: var(--card-chip-weight); padding: 2px 5px; border-radius: 7px; background: var(--card-chip-bg); color: var(--card-chip-color); flex-shrink: 0; white-space: nowrap; }
+    .card-make { font-size: var(--card-make-size); font-weight: var(--card-make-weight); font-style: var(--card-make-style); color: var(--card-make-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
     .card-status { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 12px; font-size: 0.73rem; font-weight: 700; width: fit-content; }
     .card-status .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
     .s-green  { background: #e8f5e9; color: #2e7d32; } .s-green .dot  { background: #43a047; }
     .s-yellow { background: #fff8e1; color: #e65100; } .s-yellow .dot { background: #f9a825; }
     .s-red    { background: #ffebee; color: #c62828; } .s-red .dot    { background: #ef5350; }
-    .card-driver-row { display: flex; align-items: center; gap: 6px; border-radius: 5px; padding: 4px 6px; margin: 0 -2px; }
+    .card-driver-row { display: flex; align-items: center; gap: 6px; border-radius: 5px; padding: 4px 6px; margin: 0 -2px; position: relative; z-index: 1; }
     .card-driver-row.assigned { background: #e3f2fd; }
     .card-driver-row.temp     { background: #fff3e0; border: 1px solid #ffcc80; }
-    .driver-mini-avatar { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #fff; }
+    .driver-mini-avatar { width: var(--driver-av-size); height: var(--driver-av-size); border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: #fff; }
     .driver-mini-avatar.assigned-av { background: #1565c0; }
     .driver-mini-avatar.temp-av     { background: #e65100; }
     .driver-mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
     .driver-name-col { flex: 1; min-width: 0; }
-    .driver-name-text { font-size: 0.82rem; font-weight: 700; color: #1a2535; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
-    .driver-label-text { font-size: 0.68rem; color: #7a8fa8; line-height: 1.2; }
+    .driver-name-text { font-size: var(--driver-name-size); font-weight: var(--driver-name-weight); font-style: var(--driver-name-style); color: var(--driver-name-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2; }
+    .driver-label-text { font-size: var(--driver-label-size); color: var(--driver-label-color); line-height: 1.2; }
     .temp-flag { font-size: 0.66rem; font-weight: 700; color: #e65100; display: block; }
-    .card-defect-ok   { font-size: 0.72rem; color: #2e7d32; font-weight: 600; }
-    .card-defect-warn { font-size: 0.72rem; color: #e65100; font-weight: 600; }
-    .card-redtag-reason { font-size: 0.72rem; color: #c62828; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-defect-ok   { font-size: var(--defect-size); color: var(--defect-ok-color); font-weight: var(--defect-weight); }
+    .card-defect-warn { font-size: var(--defect-size); color: var(--defect-warn-color); font-weight: var(--defect-weight); }
+    .card-redtag-reason { font-size: var(--defect-size); color: #c62828; font-weight: var(--defect-weight); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-last-trip { font-size: 0.69rem; color: #7a8fa8; }
     .card-pretrip-time { font-size: 0.69rem; color: #7a8fa8; }
     .card-elapsed { font-size: 0.72rem; color: #4fc3f7; font-weight: 700; display: flex; align-items: center; gap: 3px; }
-    .click-hint { font-size: 0.67rem; color: #aab8cc; text-align: right; margin-top: auto; }
+    .click-hint { font-size: var(--hint-size); color: var(--hint-color); text-align: right; margin-top: auto; position: relative; z-index: 1; }
     .card-admin-update { background: rgba(245,124,0,0.12); border: 1px solid rgba(245,124,0,0.3); border-radius: 5px; padding: 4px 6px; margin-top: 3px; }
     .card-admin-update-header { font-size: 0.68rem; font-weight: 700; color: #fb8c00; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-admin-update-comment { font-size: 0.72rem; color: #ffcc80; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
@@ -208,6 +223,31 @@
     .redtag-detail-box { background: rgba(239,83,80,0.08); border: 1px solid rgba(239,83,80,0.25); border-radius: 8px; padding: 12px; }
     .redtag-detail-reason { font-size: 0.88rem; color: #ef9a9a; font-weight: 600; margin-bottom: 8px; }
     .redtag-detail-meta { font-size: 0.75rem; color: #8fa8c8; }
+    /* ── Settings Panel ── */
+    #settings-btn { background: rgba(255,255,255,0.1); color: #cdd5e0; border: 1px solid rgba(255,255,255,0.2); border-radius: 7px; padding: 6px 12px; font-size: 0.82rem; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: background 0.2s; }
+    #settings-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+    #settings-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 400; }
+    #settings-backdrop.open { display: block; }
+    #settings-panel { position: fixed; top: 0; left: -490px; width: 470px; max-width: 96vw; height: 100vh; background: #0e1a2e; border-right: 2px solid #2a4a7f; z-index: 401; overflow: hidden; transition: left 0.3s ease; box-shadow: 4px 0 24px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
+    #settings-panel.open { left: 0; }
+    #settings-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid #1e3052; background: #111d2e; flex-shrink: 0; }
+    #settings-title { font-size: 1.05rem; font-weight: 700; color: #4fc3f7; }
+    #settings-close { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #cdd5e0; border-radius: 6px; padding: 5px 10px; font-size: 1rem; cursor: pointer; transition: background 0.2s; }
+    #settings-close:hover { background: rgba(255,255,255,0.18); }
+    #settings-body { padding: 12px 16px; flex: 1; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+    .sp-section { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 9px; padding: 10px 13px; }
+    .sp-section-title { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #4fc3f7; margin-bottom: 8px; }
+    .sp-row { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+    .sp-row:last-child { margin-bottom: 0; }
+    .sp-lbl { font-size: 0.72rem; color: #8fa8c8; min-width: 88px; flex-shrink: 0; }
+    .sp-val { font-size: 0.72rem; color: #fff; min-width: 48px; text-align: right; flex-shrink: 0; }
+    .sp-slider { flex: 1; accent-color: #4fc3f7; cursor: pointer; min-width: 0; }
+    .sp-color { width: 30px; height: 24px; border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; cursor: pointer; background: transparent; padding: 1px; flex-shrink: 0; }
+    .sp-toggle { display: flex; gap: 3px; flex-shrink: 0; }
+    .sp-toggle-btn { padding: 2px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #9ac3e8; cursor: pointer; transition: all 0.15s; line-height: 1.4; }
+    .sp-toggle-btn.active { background: #1565c0; border-color: #1976d2; color: #fff; }
+    #settings-reset { margin: 0 16px 14px; padding: 8px; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.15); color: #cdd5e0; border-radius: 8px; cursor: pointer; font-size: 0.8rem; font-weight: 600; flex-shrink: 0; transition: background 0.15s; }
+    #settings-reset:hover { background: rgba(255,255,255,0.13); }
   </style>
 </head>
 <body>
@@ -218,6 +258,7 @@
     <h1><span>Fleet Live View</span></h1>
   </div>
   <div id="top-bar-right">
+    <button id="settings-btn" onclick="openSettings()">⚙ Appearance</button>
     <div id="refresh-info">
       <span id="last-updated">Loading...</span>
       <span id="next-refresh"></span>
@@ -248,6 +289,67 @@
   </div>
   <div id="drawer-body"></div>
 </div>
+<div id="settings-backdrop" onclick="closeSettings()"></div>
+<div id="settings-panel">
+  <div id="settings-header">
+    <div id="settings-title">⚙ Appearance Settings</div>
+    <button id="settings-close" onclick="closeSettings()">✕</button>
+  </div>
+  <div id="settings-body">
+    <div class="sp-section">
+      <div class="sp-section-title">Card Size</div>
+      <div class="sp-row"><span class="sp-lbl">Max Height</span><input type="range" class="sp-slider" id="sp-cardMaxH" min="80" max="400" step="5" oninput="spUpdate()"><span class="sp-val" id="spv-cardMaxH">180px</span></div>
+      <div class="sp-row"><span class="sp-lbl">Max Width</span><input type="range" class="sp-slider" id="sp-cardMaxW" min="80" max="300" step="5" oninput="spUpdate()"><span class="sp-val" id="spv-cardMaxW">158px</span></div>
+    </div>
+    <div class="sp-section">
+      <div class="sp-section-title">Images</div>
+      <div class="sp-row"><span class="sp-lbl">Truck Photo</span><input type="range" class="sp-slider" id="sp-truckThumb" min="0" max="120" step="4" oninput="spUpdate()"><span class="sp-val" id="spv-truckThumb">84px</span></div>
+      <div class="sp-row"><span class="sp-lbl">Driver Photo</span><input type="range" class="sp-slider" id="sp-driverAv" min="0" max="80" step="2" oninput="spUpdate()"><span class="sp-val" id="spv-driverAv">44px</span></div>
+    </div>
+    <div class="sp-section">
+      <div class="sp-section-title">Truck Number</div>
+      <div class="sp-row"><span class="sp-lbl">Size</span><input type="range" class="sp-slider" id="sp-cardNumSize" min="0.5" max="2.5" step="0.05" oninput="spUpdate()"><span class="sp-val" id="spv-cardNumSize">1.22rem</span></div>
+      <div class="sp-row"><span class="sp-lbl">Color</span><input type="color" class="sp-color" id="sp-cardNumColor" oninput="spUpdate()"><div class="sp-toggle"><button class="sp-toggle-btn active" id="sp-cardNumBold" onclick="spToggleBold('cardNum',900,400)">B</button><button class="sp-toggle-btn" id="sp-cardNumItalic" onclick="spToggleItalic('cardNum')"><em>I</em></button></div></div>
+    </div>
+    <div class="sp-section">
+      <div class="sp-section-title">Type Chip</div>
+      <div class="sp-row"><span class="sp-lbl">Size</span><input type="range" class="sp-slider" id="sp-chipSize" min="0.4" max="1.5" step="0.05" oninput="spUpdate()"><span class="sp-val" id="spv-chipSize">0.69rem</span></div>
+      <div class="sp-row"><span class="sp-lbl">Text Color</span><input type="color" class="sp-color" id="sp-chipColor" oninput="spUpdate()"><span class="sp-lbl" style="min-width:60px;margin-left:6px">Bg</span><input type="color" class="sp-color" id="sp-chipBg" oninput="spUpdate()"><button class="sp-toggle-btn" id="sp-chipBold" onclick="spToggleBold('chip',700,400)" style="margin-left:4px">B</button></div>
+    </div>
+    <div class="sp-section">
+      <div class="sp-section-title">Year / Make</div>
+      <div class="sp-row"><span class="sp-lbl">Size</span><input type="range" class="sp-slider" id="sp-makeSize" min="0.4" max="1.5" step="0.05" oninput="spUpdate()"><span class="sp-val" id="spv-makeSize">0.77rem</span></div>
+      <div class="sp-row"><span class="sp-lbl">Color</span><input type="color" class="sp-color" id="sp-makeColor" oninput="spUpdate()"><div class="sp-toggle" style="margin-left:4px"><button class="sp-toggle-btn" id="sp-makeBold" onclick="spToggleBold('make',700,400)">B</button><button class="sp-toggle-btn" id="sp-makeItalic" onclick="spToggleItalic('make')"><em>I</em></button></div></div>
+    </div>
+    <div class="sp-section">
+      <div class="sp-section-title">Driver Name</div>
+      <div class="sp-row"><span class="sp-lbl">Size</span><input type="range" class="sp-slider" id="sp-driverNameSize" min="0.4" max="1.5" step="0.05" oninput="spUpdate()"><span class="sp-val" id="spv-driverNameSize">0.82rem</span></div>
+      <div class="sp-row"><span class="sp-lbl">Color</span><input type="color" class="sp-color" id="sp-driverNameColor" oninput="spUpdate()"><div class="sp-toggle" style="margin-left:4px"><button class="sp-toggle-btn active" id="sp-driverNameBold" onclick="spToggleBold('driverName',700,400)">B</button><button class="sp-toggle-btn" id="sp-driverNameItalic" onclick="spToggleItalic('driverName')"><em>I</em></button></div></div>
+    </div>
+    <div class="sp-section">
+      <div class="sp-section-title">Driver Label</div>
+      <div class="sp-row"><span class="sp-lbl">Size</span><input type="range" class="sp-slider" id="sp-driverLabelSize" min="0.4" max="1.2" step="0.05" oninput="spUpdate()"><span class="sp-val" id="spv-driverLabelSize">0.68rem</span></div>
+      <div class="sp-row"><span class="sp-lbl">Color</span><input type="color" class="sp-color" id="sp-driverLabelColor" oninput="spUpdate()"></div>
+    </div>
+    <div class="sp-section">
+      <div class="sp-section-title">Defect / Pre-trip Status</div>
+      <div class="sp-row"><span class="sp-lbl">Size</span><input type="range" class="sp-slider" id="sp-defectSize" min="0.4" max="1.2" step="0.05" oninput="spUpdate()"><span class="sp-val" id="spv-defectSize">0.72rem</span></div>
+      <div class="sp-row"><span class="sp-lbl">OK Color</span><input type="color" class="sp-color" id="sp-defectOkColor" oninput="spUpdate()"><span class="sp-lbl" style="min-width:70px;margin-left:6px">Warn</span><input type="color" class="sp-color" id="sp-defectWarnColor" oninput="spUpdate()"><button class="sp-toggle-btn active" id="sp-defectBold" onclick="spToggleBold('defect',600,400)" style="margin-left:4px">B</button></div>
+    </div>
+    <div class="sp-section">
+      <div class="sp-section-title">Tap for Details</div>
+      <div class="sp-row"><span class="sp-lbl">Size</span><input type="range" class="sp-slider" id="sp-hintSize" min="0.4" max="1.0" step="0.05" oninput="spUpdate()"><span class="sp-val" id="spv-hintSize">0.67rem</span></div>
+      <div class="sp-row"><span class="sp-lbl">Color</span><input type="color" class="sp-color" id="sp-hintColor" oninput="spUpdate()"></div>
+    </div>
+    <div class="sp-section">
+      <div class="sp-section-title">Card Colors</div>
+      <div class="sp-row"><span class="sp-lbl">Background</span><input type="color" class="sp-color" id="sp-cardBg" oninput="spUpdate()"></div>
+      <div class="sp-row"><span class="sp-lbl">In Use Border</span><input type="color" class="sp-color" id="sp-inuseBorder" oninput="spUpdate()"><span class="sp-lbl" style="min-width:60px;margin-left:6px">Idle</span><input type="color" class="sp-color" id="sp-idleBorder" oninput="spUpdate()"></div>
+      <div class="sp-row"><span class="sp-lbl">Red Tag Border</span><input type="color" class="sp-color" id="sp-redtagBorder" oninput="spUpdate()"></div>
+    </div>
+  </div>
+  <button id="settings-reset" onclick="spReset()">↺ Reset to Defaults</button>
+</div>
 <script>
   var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec';
   var POLL_INTERVAL = 30 * 1000;
@@ -260,7 +362,131 @@
   var _params      = new URLSearchParams(window.location.search);
   var _lockedLoc   = (_params.get('location') || '').trim();
   var _lockedType  = (_params.get('type')     || '').trim();
+  // ── Appearance Settings ─────────────────────────────────────────────────
+  var SP_DEFAULTS = {
+    cardMaxH:180, cardMaxW:158, truckThumb:84, driverAv:44,
+    cardNumSize:1.22, cardNumWeight:900, cardNumStyle:'normal', cardNumColor:'#0d2a5e',
+    chipSize:0.69, chipWeight:700, chipColor:'#3a5a8c', chipBg:'#e8edf8',
+    makeSize:0.77, makeWeight:400, makeStyle:'normal', makeColor:'#5a6e8a',
+    driverNameSize:0.82, driverNameWeight:700, driverNameStyle:'normal', driverNameColor:'#1a2535',
+    driverLabelSize:0.68, driverLabelColor:'#7a8fa8',
+    defectSize:0.72, defectWeight:600, defectOkColor:'#2e7d32', defectWarnColor:'#e65100',
+    hintSize:0.67, hintColor:'#aab8cc',
+    cardBg:'#ffffff', inuseBorder:'#43a047', idleBorder:'#f9a825', redtagBorder:'#ef5350'
+  };
+  var _sp = Object.assign({}, SP_DEFAULTS);
+
+  function spLoad() {
+    try { var s = localStorage.getItem('fleet-appearance'); if (s) _sp = Object.assign({}, SP_DEFAULTS, JSON.parse(s)); } catch(e) {}
+  }
+  function spSave() {
+    try { localStorage.setItem('fleet-appearance', JSON.stringify(_sp)); } catch(e) {}
+  }
+  function spApplyCss() {
+    var r = document.documentElement.style;
+    r.setProperty('--truck-thumb-size', _sp.truckThumb + 'px');
+    r.setProperty('--driver-av-size', _sp.driverAv + 'px');
+    r.setProperty('--card-num-size', _sp.cardNumSize + 'rem');
+    r.setProperty('--card-num-weight', _sp.cardNumWeight);
+    r.setProperty('--card-num-style', _sp.cardNumStyle);
+    r.setProperty('--card-num-color', _sp.cardNumColor);
+    r.setProperty('--card-chip-size', _sp.chipSize + 'rem');
+    r.setProperty('--card-chip-weight', _sp.chipWeight);
+    r.setProperty('--card-chip-color', _sp.chipColor);
+    r.setProperty('--card-chip-bg', _sp.chipBg);
+    r.setProperty('--card-make-size', _sp.makeSize + 'rem');
+    r.setProperty('--card-make-weight', _sp.makeWeight);
+    r.setProperty('--card-make-style', _sp.makeStyle);
+    r.setProperty('--card-make-color', _sp.makeColor);
+    r.setProperty('--driver-name-size', _sp.driverNameSize + 'rem');
+    r.setProperty('--driver-name-weight', _sp.driverNameWeight);
+    r.setProperty('--driver-name-style', _sp.driverNameStyle);
+    r.setProperty('--driver-name-color', _sp.driverNameColor);
+    r.setProperty('--driver-label-size', _sp.driverLabelSize + 'rem');
+    r.setProperty('--driver-label-color', _sp.driverLabelColor);
+    r.setProperty('--defect-size', _sp.defectSize + 'rem');
+    r.setProperty('--defect-weight', _sp.defectWeight);
+    r.setProperty('--defect-ok-color', _sp.defectOkColor);
+    r.setProperty('--defect-warn-color', _sp.defectWarnColor);
+    r.setProperty('--hint-size', _sp.hintSize + 'rem');
+    r.setProperty('--hint-color', _sp.hintColor);
+    r.setProperty('--card-bg', _sp.cardBg);
+    r.setProperty('--card-inuse-border', _sp.inuseBorder);
+    r.setProperty('--card-idle-border', _sp.idleBorder);
+    r.setProperty('--card-redtag-border', _sp.redtagBorder);
+    fitAllGrids();
+  }
+  function _el(id) { return document.getElementById(id); }
+  function spSyncUI() {
+    _el('sp-cardMaxH').value=_sp.cardMaxH; _el('spv-cardMaxH').textContent=_sp.cardMaxH+'px';
+    _el('sp-cardMaxW').value=_sp.cardMaxW; _el('spv-cardMaxW').textContent=_sp.cardMaxW+'px';
+    _el('sp-truckThumb').value=_sp.truckThumb; _el('spv-truckThumb').textContent=_sp.truckThumb+'px';
+    _el('sp-driverAv').value=_sp.driverAv; _el('spv-driverAv').textContent=_sp.driverAv+'px';
+    _el('sp-cardNumSize').value=_sp.cardNumSize; _el('spv-cardNumSize').textContent=_sp.cardNumSize.toFixed(2)+'rem';
+    _el('sp-cardNumColor').value=_sp.cardNumColor;
+    _el('sp-cardNumBold').classList.toggle('active',_sp.cardNumWeight>=700);
+    _el('sp-cardNumItalic').classList.toggle('active',_sp.cardNumStyle==='italic');
+    _el('sp-chipSize').value=_sp.chipSize; _el('spv-chipSize').textContent=_sp.chipSize.toFixed(2)+'rem';
+    _el('sp-chipColor').value=_sp.chipColor; _el('sp-chipBg').value=_sp.chipBg;
+    _el('sp-chipBold').classList.toggle('active',_sp.chipWeight>=700);
+    _el('sp-makeSize').value=_sp.makeSize; _el('spv-makeSize').textContent=_sp.makeSize.toFixed(2)+'rem';
+    _el('sp-makeColor').value=_sp.makeColor;
+    _el('sp-makeBold').classList.toggle('active',_sp.makeWeight>=700);
+    _el('sp-makeItalic').classList.toggle('active',_sp.makeStyle==='italic');
+    _el('sp-driverNameSize').value=_sp.driverNameSize; _el('spv-driverNameSize').textContent=_sp.driverNameSize.toFixed(2)+'rem';
+    _el('sp-driverNameColor').value=_sp.driverNameColor;
+    _el('sp-driverNameBold').classList.toggle('active',_sp.driverNameWeight>=700);
+    _el('sp-driverNameItalic').classList.toggle('active',_sp.driverNameStyle==='italic');
+    _el('sp-driverLabelSize').value=_sp.driverLabelSize; _el('spv-driverLabelSize').textContent=_sp.driverLabelSize.toFixed(2)+'rem';
+    _el('sp-driverLabelColor').value=_sp.driverLabelColor;
+    _el('sp-defectSize').value=_sp.defectSize; _el('spv-defectSize').textContent=_sp.defectSize.toFixed(2)+'rem';
+    _el('sp-defectOkColor').value=_sp.defectOkColor; _el('sp-defectWarnColor').value=_sp.defectWarnColor;
+    _el('sp-defectBold').classList.toggle('active',_sp.defectWeight>=600);
+    _el('sp-hintSize').value=_sp.hintSize; _el('spv-hintSize').textContent=_sp.hintSize.toFixed(2)+'rem';
+    _el('sp-hintColor').value=_sp.hintColor;
+    _el('sp-cardBg').value=_sp.cardBg;
+    _el('sp-inuseBorder').value=_sp.inuseBorder; _el('sp-idleBorder').value=_sp.idleBorder;
+    _el('sp-redtagBorder').value=_sp.redtagBorder;
+  }
+  function spUpdate() {
+    _sp.cardMaxH=parseInt(_el('sp-cardMaxH').value); _sp.cardMaxW=parseInt(_el('sp-cardMaxW').value);
+    _sp.truckThumb=parseInt(_el('sp-truckThumb').value); _sp.driverAv=parseInt(_el('sp-driverAv').value);
+    _sp.cardNumSize=parseFloat(_el('sp-cardNumSize').value); _sp.cardNumColor=_el('sp-cardNumColor').value;
+    _sp.chipSize=parseFloat(_el('sp-chipSize').value); _sp.chipColor=_el('sp-chipColor').value; _sp.chipBg=_el('sp-chipBg').value;
+    _sp.makeSize=parseFloat(_el('sp-makeSize').value); _sp.makeColor=_el('sp-makeColor').value;
+    _sp.driverNameSize=parseFloat(_el('sp-driverNameSize').value); _sp.driverNameColor=_el('sp-driverNameColor').value;
+    _sp.driverLabelSize=parseFloat(_el('sp-driverLabelSize').value); _sp.driverLabelColor=_el('sp-driverLabelColor').value;
+    _sp.defectSize=parseFloat(_el('sp-defectSize').value); _sp.defectOkColor=_el('sp-defectOkColor').value; _sp.defectWarnColor=_el('sp-defectWarnColor').value;
+    _sp.hintSize=parseFloat(_el('sp-hintSize').value); _sp.hintColor=_el('sp-hintColor').value;
+    _sp.cardBg=_el('sp-cardBg').value; _sp.inuseBorder=_el('sp-inuseBorder').value; _sp.idleBorder=_el('sp-idleBorder').value; _sp.redtagBorder=_el('sp-redtagBorder').value;
+    _el('spv-cardMaxH').textContent=_sp.cardMaxH+'px'; _el('spv-cardMaxW').textContent=_sp.cardMaxW+'px';
+    _el('spv-truckThumb').textContent=_sp.truckThumb+'px'; _el('spv-driverAv').textContent=_sp.driverAv+'px';
+    _el('spv-cardNumSize').textContent=_sp.cardNumSize.toFixed(2)+'rem';
+    _el('spv-chipSize').textContent=_sp.chipSize.toFixed(2)+'rem';
+    _el('spv-makeSize').textContent=_sp.makeSize.toFixed(2)+'rem';
+    _el('spv-driverNameSize').textContent=_sp.driverNameSize.toFixed(2)+'rem';
+    _el('spv-driverLabelSize').textContent=_sp.driverLabelSize.toFixed(2)+'rem';
+    _el('spv-defectSize').textContent=_sp.defectSize.toFixed(2)+'rem';
+    _el('spv-hintSize').textContent=_sp.hintSize.toFixed(2)+'rem';
+    spApplyCss(); spSave();
+  }
+  function spToggleBold(key, onVal, offVal) {
+    var k = key+'Weight'; _sp[k] = (_sp[k]>=onVal) ? offVal : onVal;
+    _el('sp-'+key+'Bold').classList.toggle('active', _sp[k]>=onVal);
+    spApplyCss(); spSave();
+  }
+  function spToggleItalic(key) {
+    var k = key+'Style'; _sp[k] = (_sp[k]==='italic') ? 'normal' : 'italic';
+    _el('sp-'+key+'Italic').classList.toggle('active', _sp[k]==='italic');
+    spApplyCss(); spSave();
+  }
+  function spReset() { _sp = Object.assign({}, SP_DEFAULTS); spApplyCss(); spSyncUI(); spSave(); }
+  function openSettings() { spSyncUI(); _el('settings-panel').classList.add('open'); _el('settings-backdrop').classList.add('open'); }
+  function closeSettings() { _el('settings-panel').classList.remove('open'); _el('settings-backdrop').classList.remove('open'); }
+  // ────────────────────────────────────────────────────────────────────────
+
   window.addEventListener('load', function() {
+    spLoad(); spApplyCss();
     if (_lockedLoc) {
       _activeTab = _lockedLoc;
       if (_lockedType) _typeFilters[_lockedLoc] = _lockedType;
@@ -455,7 +681,7 @@
     var rows  = Math.ceil(N / bestCols);
     var cardW = Math.floor((availW - GAP * (bestCols - 1)) / bestCols);
     var cardH = Math.floor((availH - GAP * (rows    - 1)) / rows);
-    var MAX_W = 158, MAX_H = 165;
+    var MAX_W = _sp.cardMaxW, MAX_H = _sp.cardMaxH;
     cardW = Math.min(cardW, MAX_W);
     cardH = Math.min(cardH, MAX_H);
     var compact = cardH < 65;
