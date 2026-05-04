@@ -342,6 +342,15 @@
       <div class="sp-row"><span class="sp-lbl">Color</span><input type="color" class="sp-color" id="sp-hintColor" oninput="spUpdate()"></div>
     </div>
     <div class="sp-section">
+      <div class="sp-section-title">Section Column Ratios</div>
+      <div class="sp-row"><span class="sp-lbl">In Use weight</span><input type="range" class="sp-slider" id="sp-inUseMult" min="0.3" max="4.0" step="0.1" oninput="spUpdate()"><span class="sp-val" id="spv-inUseMult">1.3×</span></div>
+      <div class="sp-row"><span class="sp-lbl">Idle weight</span><input type="range" class="sp-slider" id="sp-idleMult" min="0.3" max="4.0" step="0.1" oninput="spUpdate()"><span class="sp-val" id="spv-idleMult">1.0×</span></div>
+      <div class="sp-row"><span class="sp-lbl">Red Tag weight</span><input type="range" class="sp-slider" id="sp-redMult" min="0.1" max="4.0" step="0.1" oninput="spUpdate()"><span class="sp-val" id="spv-redMult">0.5×</span></div>
+      <div class="sp-row"><span class="sp-lbl">In Use min fr</span><input type="range" class="sp-slider" id="sp-inUseMinFr" min="1" max="15" step="1" oninput="spUpdate()"><span class="sp-val" id="spv-inUseMinFr">4</span></div>
+      <div class="sp-row"><span class="sp-lbl">Idle min fr</span><input type="range" class="sp-slider" id="sp-idleMinFr" min="1" max="15" step="1" oninput="spUpdate()"><span class="sp-val" id="spv-idleMinFr">3</span></div>
+      <div class="sp-row"><span class="sp-lbl">Red Tag min fr</span><input type="range" class="sp-slider" id="sp-redMinFr" min="1" max="10" step="1" oninput="spUpdate()"><span class="sp-val" id="spv-redMinFr">2</span></div>
+    </div>
+    <div class="sp-section">
       <div class="sp-section-title">Card Colors</div>
       <div class="sp-row"><span class="sp-lbl">Background</span><input type="color" class="sp-color" id="sp-cardBg" oninput="spUpdate()"></div>
       <div class="sp-row"><span class="sp-lbl">In Use Border</span><input type="color" class="sp-color" id="sp-inuseBorder" oninput="spUpdate()"><span class="sp-lbl" style="min-width:60px;margin-left:6px">Idle</span><input type="color" class="sp-color" id="sp-idleBorder" oninput="spUpdate()"></div>
@@ -365,6 +374,7 @@
   // ── Appearance Settings ─────────────────────────────────────────────────
   var SP_DEFAULTS = {
     cardMaxH:180, cardMaxW:158, truckThumb:84, driverAv:44,
+    inUseMult:1.3, idleMult:1.0, redMult:0.5, inUseMinFr:4, idleMinFr:3, redMinFr:2,
     cardNumSize:1.22, cardNumWeight:900, cardNumStyle:'normal', cardNumColor:'#0d2a5e',
     chipSize:0.69, chipWeight:700, chipColor:'#3a5a8c', chipBg:'#e8edf8',
     makeSize:0.77, makeWeight:400, makeStyle:'normal', makeColor:'#5a6e8a',
@@ -414,7 +424,8 @@
     r.setProperty('--card-inuse-border', _sp.inuseBorder);
     r.setProperty('--card-idle-border', _sp.idleBorder);
     r.setProperty('--card-redtag-border', _sp.redtagBorder);
-    fitAllGrids();
+    var locsToRerender = _lockedLoc ? [_lockedLoc] : LOCATIONS;
+    locsToRerender.forEach(renderPane);
   }
   function _el(id) { return document.getElementById(id); }
   function spSyncUI() {
@@ -444,6 +455,12 @@
     _el('sp-defectBold').classList.toggle('active',_sp.defectWeight>=600);
     _el('sp-hintSize').value=_sp.hintSize; _el('spv-hintSize').textContent=_sp.hintSize.toFixed(2)+'rem';
     _el('sp-hintColor').value=_sp.hintColor;
+    _el('sp-inUseMult').value=_sp.inUseMult; _el('spv-inUseMult').textContent=_sp.inUseMult.toFixed(1)+'×';
+    _el('sp-idleMult').value=_sp.idleMult;   _el('spv-idleMult').textContent=_sp.idleMult.toFixed(1)+'×';
+    _el('sp-redMult').value=_sp.redMult;     _el('spv-redMult').textContent=_sp.redMult.toFixed(1)+'×';
+    _el('sp-inUseMinFr').value=_sp.inUseMinFr; _el('spv-inUseMinFr').textContent=_sp.inUseMinFr;
+    _el('sp-idleMinFr').value=_sp.idleMinFr;   _el('spv-idleMinFr').textContent=_sp.idleMinFr;
+    _el('sp-redMinFr').value=_sp.redMinFr;     _el('spv-redMinFr').textContent=_sp.redMinFr;
     _el('sp-cardBg').value=_sp.cardBg;
     _el('sp-inuseBorder').value=_sp.inuseBorder; _el('sp-idleBorder').value=_sp.idleBorder;
     _el('sp-redtagBorder').value=_sp.redtagBorder;
@@ -458,6 +475,10 @@
     _sp.driverLabelSize=parseFloat(_el('sp-driverLabelSize').value); _sp.driverLabelColor=_el('sp-driverLabelColor').value;
     _sp.defectSize=parseFloat(_el('sp-defectSize').value); _sp.defectOkColor=_el('sp-defectOkColor').value; _sp.defectWarnColor=_el('sp-defectWarnColor').value;
     _sp.hintSize=parseFloat(_el('sp-hintSize').value); _sp.hintColor=_el('sp-hintColor').value;
+    _sp.inUseMult=parseFloat(_el('sp-inUseMult').value); _sp.idleMult=parseFloat(_el('sp-idleMult').value); _sp.redMult=parseFloat(_el('sp-redMult').value);
+    _sp.inUseMinFr=parseInt(_el('sp-inUseMinFr').value); _sp.idleMinFr=parseInt(_el('sp-idleMinFr').value); _sp.redMinFr=parseInt(_el('sp-redMinFr').value);
+    _el('spv-inUseMult').textContent=_sp.inUseMult.toFixed(1)+'×'; _el('spv-idleMult').textContent=_sp.idleMult.toFixed(1)+'×'; _el('spv-redMult').textContent=_sp.redMult.toFixed(1)+'×';
+    _el('spv-inUseMinFr').textContent=_sp.inUseMinFr; _el('spv-idleMinFr').textContent=_sp.idleMinFr; _el('spv-redMinFr').textContent=_sp.redMinFr;
     _sp.cardBg=_el('sp-cardBg').value; _sp.inuseBorder=_el('sp-inuseBorder').value; _sp.idleBorder=_el('sp-idleBorder').value; _sp.redtagBorder=_el('sp-redtagBorder').value;
     _el('spv-cardMaxH').textContent=_sp.cardMaxH+'px'; _el('spv-cardMaxW').textContent=_sp.cardMaxW+'px';
     _el('spv-truckThumb').textContent=_sp.truckThumb+'px'; _el('spv-driverAv').textContent=_sp.driverAv+'px';
@@ -632,9 +653,9 @@
     var redtag = sortTrucks(filtered.filter(function(t) { return t.status === 'red_tagged'; }));
     var fl = af ? ' - ' + af + 's' : '';
     var hasInUse = inUse.length > 0;
-    var inFr  = Math.max(4, Math.round(inUse.length  * 1.3));
-    var idlFr = Math.max(3, Math.round(idle.length   * 1.0));
-    var redFr = Math.max(2, Math.round(redtag.length * 0.5));
+    var inFr  = Math.max(_sp.inUseMinFr, Math.round(inUse.length  * _sp.inUseMult));
+    var idlFr = Math.max(_sp.idleMinFr,  Math.round(idle.length   * _sp.idleMult));
+    var redFr = Math.max(_sp.redMinFr,   Math.round(redtag.length * _sp.redMult));
     var colStyle = hasInUse
       ? 'grid-template-columns:' + inFr + 'fr ' + idlFr + 'fr ' + redFr + 'fr'
       : 'grid-template-columns:2fr 7fr 2fr';
