@@ -363,6 +363,9 @@
     var rows  = Math.ceil(N / bestCols);
     var cardW = Math.floor((availW - GAP * (bestCols - 1)) / bestCols);
     var cardH = Math.floor((availH - GAP * (rows    - 1)) / rows);
+    var MAX_W = 280, MAX_H = 300;
+    cardW = Math.min(cardW, MAX_W);
+    cardH = Math.min(cardH, MAX_H);
 
     gridEl.style.gridTemplateColumns = 'repeat(' + bestCols + ', ' + cardW + 'px)';
     gridEl.style.gridTemplateRows    = 'repeat(' + rows    + ', ' + cardH + 'px)';
