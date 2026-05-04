@@ -455,6 +455,9 @@
     var rows  = Math.ceil(N / bestCols);
     var cardW = Math.floor((availW - GAP * (bestCols - 1)) / bestCols);
     var cardH = Math.floor((availH - GAP * (rows    - 1)) / rows);
+    var MAX_W = 158, MAX_H = 150;
+    cardW = Math.min(cardW, MAX_W);
+    cardH = Math.min(cardH, MAX_H);
     var compact = cardH < 65;
     var noThumb = cardH < 110 || cardW < 130;
 
