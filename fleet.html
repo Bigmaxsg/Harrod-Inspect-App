@@ -59,7 +59,7 @@
     .col-count { margin-left: auto; font-size: 0.72rem; opacity: 0.7; }
     .card-grid { flex: 1; min-height: 0; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-top: none; border-radius: 0 0 8px 8px; padding: 8px; display: grid; grid-template-columns: repeat(auto-fill, 158px); gap: 7px; align-content: start; overflow: hidden; }
     .col-empty { text-align: center; padding: 18px 8px; color: #4a6080; font-size: 0.78rem; font-style: italic; grid-column: 1 / -1; }
-    .truck-card { background: #fff; border-radius: 8px; padding: 9px 10px 8px; color: #1a2535; box-shadow: 0 1px 6px rgba(0,0,0,0.2); border-left: 3px solid #ccc; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; width: 158px; }
+    .truck-card { background: #fff; border-radius: 8px; padding: 9px 10px 8px; color: #1a2535; box-shadow: 0 1px 6px rgba(0,0,0,0.2); border-left: 3px solid #ccc; display: flex; flex-direction: column; gap: 6px; cursor: pointer; transition: transform 0.12s, box-shadow 0.12s; width: 158px; position: relative; }
     .truck-card:hover { transform: translateY(-2px); box-shadow: 0 4px 14px rgba(0,0,0,0.32); }
     .truck-card.inuse  { border-left-color: #43a047; }
     .truck-card.idle   { border-left-color: #f9a825; }
@@ -70,6 +70,8 @@
   justify-content: space-between;
   gap: 6px;
   width: 100%;
+  position: relative;
+  z-index: 1;
 }
 
 .card-num-wrap {
@@ -83,15 +85,16 @@
 }
 
 .card-front-thumb {
-  width: 42px !important;
-  height: 42px !important;
-  min-width: 42px !important;
-  max-width: 42px !important;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 84px;
+  height: 84px;
   border-radius: 6px;
   overflow: hidden;
   border: 1px solid #d5dde8;
   background: #eef3f8;
-  flex: 0 0 42px;
+  z-index: 0;
 }
 
 .card-front-thumb img {
@@ -103,16 +106,16 @@
 }
     .card-num { font-size: 1.22rem; font-weight: 900; color: #0d2a5e; line-height: 1; }
     .card-type-chip { font-size: 0.69rem; font-weight: 700; padding: 2px 5px; border-radius: 7px; background: #e8edf8; color: #3a5a8c; flex-shrink: 0; white-space: nowrap; }
-    .card-make { font-size: 0.77rem; color: #5a6e8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .card-make { font-size: 0.77rem; color: #5a6e8a; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
     .card-status { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 12px; font-size: 0.73rem; font-weight: 700; width: fit-content; }
     .card-status .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
     .s-green  { background: #e8f5e9; color: #2e7d32; } .s-green .dot  { background: #43a047; }
     .s-yellow { background: #fff8e1; color: #e65100; } .s-yellow .dot { background: #f9a825; }
     .s-red    { background: #ffebee; color: #c62828; } .s-red .dot    { background: #ef5350; }
-    .card-driver-row { display: flex; align-items: center; gap: 6px; border-radius: 5px; padding: 4px 6px; margin: 0 -2px; }
+    .card-driver-row { display: flex; align-items: center; gap: 6px; border-radius: 5px; padding: 4px 6px; margin: 0 -2px; position: relative; z-index: 1; }
     .card-driver-row.assigned { background: #e3f2fd; }
     .card-driver-row.temp     { background: #fff3e0; border: 1px solid #ffcc80; }
-    .driver-mini-avatar { width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; color: #fff; }
+    .driver-mini-avatar { width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: #fff; }
     .driver-mini-avatar.assigned-av { background: #1565c0; }
     .driver-mini-avatar.temp-av     { background: #e65100; }
     .driver-mini-avatar img { width: 100%; height: 100%; object-fit: cover; }
@@ -126,7 +129,7 @@
     .card-last-trip { font-size: 0.69rem; color: #7a8fa8; }
     .card-pretrip-time { font-size: 0.69rem; color: #7a8fa8; }
     .card-elapsed { font-size: 0.72rem; color: #4fc3f7; font-weight: 700; display: flex; align-items: center; gap: 3px; }
-    .click-hint { font-size: 0.67rem; color: #aab8cc; text-align: right; margin-top: auto; }
+    .click-hint { font-size: 0.67rem; color: #aab8cc; text-align: right; margin-top: auto; position: relative; z-index: 1; }
     .card-admin-update { background: rgba(245,124,0,0.12); border: 1px solid rgba(245,124,0,0.3); border-radius: 5px; padding: 4px 6px; margin-top: 3px; }
     .card-admin-update-header { font-size: 0.68rem; font-weight: 700; color: #fb8c00; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .card-admin-update-comment { font-size: 0.72rem; color: #ffcc80; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
@@ -455,7 +458,7 @@
     var rows  = Math.ceil(N / bestCols);
     var cardW = Math.floor((availW - GAP * (bestCols - 1)) / bestCols);
     var cardH = Math.floor((availH - GAP * (rows    - 1)) / rows);
-    var MAX_W = 158, MAX_H = 165;
+    var MAX_W = 158, MAX_H = 180;
     cardW = Math.min(cardW, MAX_W);
     cardH = Math.min(cardH, MAX_H);
     var compact = cardH < 65;
