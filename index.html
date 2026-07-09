@@ -175,16 +175,32 @@
       window.location.replace(APP_URL);
     }
 
+    function isFirefox() {
+      return /firefox/i.test(navigator.userAgent);
+    }
+
     // Try the app framed first (no Google "created by a Google Apps Script
     // user" banner this way). If it doesn't confirm it loaded within 3s —
-    // Safari/Firefox third-party cookie blocking is the known cause — fall
-    // back to a direct top-level navigation, which always works but shows
-    // Google's banner. The fallback timer is unconditional: it fires no
-    // matter what state the iframe is in, so nobody can get stuck.
+    // Safari third-party cookie blocking is the known cause — fall back to
+    // a direct top-level navigation, which always works but shows Google's
+    // banner. The fallback timer is unconditional: it fires no matter what
+    // state the iframe is in, so nobody can get stuck.
+    //
+    // Firefox skips the iframe attempt entirely — confirmed (2026-07-09)
+    // that Firefox's Enhanced Tracking Protection blocks it outright, which
+    // showed as a brief "can't load this page" flash before the 3s fallback
+    // kicked in. Going straight to the direct nav avoids that flash; the
+    // end result is identical either way (Firefox always needed the
+    // fallback), this just skips the failed attempt first.
     function attemptApp() {
       if (_appAttempted || _redirected) return;
       _appAttempted = true;
       hideOverlay();
+
+      if (isFirefox()) {
+        redirectToApp();
+        return;
+      }
 
       var frame = document.createElement('iframe');
       frame.id = 'app-frame';
