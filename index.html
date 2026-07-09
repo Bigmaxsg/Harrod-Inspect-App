@@ -180,15 +180,22 @@
     }
 
     // Try the app framed first (no Google "created by a Google Apps Script
-    // user" banner this way). If it doesn't confirm it loaded within 3s —
-    // Safari third-party cookie blocking is the known cause — fall back to
-    // a direct top-level navigation, which always works but shows Google's
-    // banner. The fallback timer is unconditional: it fires no matter what
-    // state the iframe is in, so nobody can get stuck.
+    // user" banner this way). If it doesn't confirm it loaded within the
+    // timeout — Safari third-party cookie blocking is the known cause —
+    // fall back to a direct top-level navigation, which always works but
+    // shows Google's banner. The fallback timer is unconditional: it fires
+    // no matter what state the iframe is in, so nobody can get stuck.
+    //
+    // Timeout is 7s, not a snappier 2-3s: measured (2026-07-09) that even an
+    // UNFRAMED direct load of this ~2.6MB app takes ~2.7s to fire `load`
+    // (Google's own script.google.com -> script.googleusercontent.com
+    // redirect chain), and framing adds more overhead on top of that. A
+    // shorter timeout was firing before Chrome's iframe attempt — which
+    // works fine — ever got a chance to finish.
     //
     // Firefox skips the iframe attempt entirely — confirmed (2026-07-09)
     // that Firefox's Enhanced Tracking Protection blocks it outright, which
-    // showed as a brief "can't load this page" flash before the 3s fallback
+    // showed as a brief "can't load this page" flash before the fallback
     // kicked in. Going straight to the direct nav avoids that flash; the
     // end result is identical either way (Firefox always needed the
     // fallback), this just skips the failed attempt first.
@@ -210,7 +217,7 @@
 
       _appFallbackTimer = setTimeout(function() {
         if (!_appSucceeded) redirectToApp();
-      }, 3000);
+      }, 7000);
     }
 
     // Listen for the "app-ready" ping the truck app itself sends once it has
