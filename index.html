@@ -161,14 +161,60 @@
     const installSteps = document.getElementById('install-steps');
     const installAction = document.getElementById('install-action');
 
+    const APP_URL = 'https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec';
+
     let deferredPrompt = null;
     let _redirected = false;
+    let _appAttempted = false;
+    let _appSucceeded = false;
+    let _appFallbackTimer = null;
 
     function redirectToApp() {
       if (_redirected) return;
       _redirected = true;
-      window.location.replace('https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec');
+      window.location.replace(APP_URL);
     }
+
+    // Try the app framed first (no Google "created by a Google Apps Script
+    // user" banner this way). If it doesn't confirm it loaded within 3s —
+    // Safari/Firefox third-party cookie blocking is the known cause — fall
+    // back to a direct top-level navigation, which always works but shows
+    // Google's banner. The fallback timer is unconditional: it fires no
+    // matter what state the iframe is in, so nobody can get stuck.
+    function attemptApp() {
+      if (_appAttempted || _redirected) return;
+      _appAttempted = true;
+      hideOverlay();
+
+      var frame = document.createElement('iframe');
+      frame.id = 'app-frame';
+      frame.setAttribute('allow', 'camera');
+      frame.src = APP_URL;
+      document.body.appendChild(frame);
+
+      _appFallbackTimer = setTimeout(function() {
+        if (!_appSucceeded) redirectToApp();
+      }, 3000);
+    }
+
+    // Listen for the "app-ready" ping the truck app itself sends once it has
+    // loaded and rendered (see index.html's window.onload) — only accept it
+    // from Google-controlled domains, since that's who's allowed to be framed.
+    window.addEventListener('message', function(event) {
+      try {
+        var origin = event.origin || '';
+        var isGoogle = origin.endsWith('.google.com') || origin.endsWith('.googleusercontent.com');
+        if (!isGoogle) return;
+        var msg = event.data;
+        if (msg && msg.type === 'app-ready') {
+          _appSucceeded = true;
+          if (_appFallbackTimer) { clearTimeout(_appFallbackTimer); _appFallbackTimer = null; }
+        }
+        if (msg && msg.type === 'reload-pwa') {
+          window.location.reload();
+        }
+      } catch (e) { /* ignore malformed messages */ }
+    });
 
     function isIos() {
       return /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -231,7 +277,7 @@
     closeBtn.addEventListener('click', function() {
       hideOverlay();
       markInstallPromptDismissed();
-      redirectToApp();
+      attemptApp();
     });
 
     installAction.addEventListener('click', async function() {
@@ -248,7 +294,7 @@
       deferredPrompt = null;
       hideOverlay();
       markInstallPromptDismissed();
-      redirectToApp();
+      attemptApp();
     });
 
     window.addEventListener('beforeinstallprompt', function(e) {
@@ -265,18 +311,18 @@
       deferredPrompt = null;
       hideOverlay();
       markInstallPromptDismissed();
-      redirectToApp();
+      attemptApp();
     });
 
     window.addEventListener('load', function() {
       if (isInStandaloneMode()) {
         hideOverlay();
-        redirectToApp();
+        attemptApp();
         return;
       }
 
       if (hasDismissedInstallPrompt()) {
-        redirectToApp();
+        attemptApp();
         return;
       }
 
@@ -292,11 +338,11 @@
           showOverlay();
         }
         // else: beforeinstallprompt already showed its own overlay;
-        // its Install/Close handlers call redirectToApp().
+        // its Install/Close handlers call attemptApp().
         return;
       }
 
-      redirectToApp();
+      attemptApp();
     });
   </script>
 </body>
