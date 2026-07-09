@@ -133,8 +133,6 @@
 </head>
 <body>
 
-  <iframe src="https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec" allow="camera"></iframe>
-
   <div id="install-overlay">
     <div id="install-card">
       <button id="close-install" aria-label="Close">&times;</button>
@@ -164,6 +162,13 @@
     const installAction = document.getElementById('install-action');
 
     let deferredPrompt = null;
+    let _redirected = false;
+
+    function redirectToApp() {
+      if (_redirected) return;
+      _redirected = true;
+      window.location.replace('https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec');
+    }
 
     function isIos() {
       return /iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -226,6 +231,7 @@
     closeBtn.addEventListener('click', function() {
       hideOverlay();
       markInstallPromptDismissed();
+      redirectToApp();
     });
 
     installAction.addEventListener('click', async function() {
@@ -242,6 +248,7 @@
       deferredPrompt = null;
       hideOverlay();
       markInstallPromptDismissed();
+      redirectToApp();
     });
 
     window.addEventListener('beforeinstallprompt', function(e) {
@@ -258,32 +265,18 @@
       deferredPrompt = null;
       hideOverlay();
       markInstallPromptDismissed();
-    });
-
-    // Listen for reload requests from the GAS iframe (sent when the user taps
-    // the "🔄 New version available" banner inside the app). Only accept
-    // messages from Google-controlled domains for security — the iframe is
-    // served from script.googleusercontent.com after GAS's redirect chain.
-    window.addEventListener('message', function(event) {
-      try {
-        var origin = event.origin || '';
-        var isGoogle = origin.endsWith('.google.com') ||
-                       origin.endsWith('.googleusercontent.com');
-        if (!isGoogle) return;
-        var msg = event.data;
-        if (msg && msg.type === 'reload-pwa') {
-          window.location.reload();
-        }
-      } catch (e) { /* ignore malformed messages */ }
+      redirectToApp();
     });
 
     window.addEventListener('load', function() {
       if (isInStandaloneMode()) {
         hideOverlay();
+        redirectToApp();
         return;
       }
 
       if (hasDismissedInstallPrompt()) {
+        redirectToApp();
         return;
       }
 
@@ -293,10 +286,17 @@
         return;
       }
 
-      if (isAndroid() && !deferredPrompt) {
-        setAndroidManualInstructions();
-        showOverlay();
+      if (isAndroid()) {
+        if (!deferredPrompt) {
+          setAndroidManualInstructions();
+          showOverlay();
+        }
+        // else: beforeinstallprompt already showed its own overlay;
+        // its Install/Close handlers call redirectToApp().
+        return;
       }
+
+      redirectToApp();
     });
   </script>
 </body>
