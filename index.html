@@ -163,11 +163,35 @@
 
     const APP_URL = 'https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec';
 
+    // Two-stage iframe detection (2026-07-09, Session 89):
+    //   Stage 1 — the app pings "app-alive" from a tiny <script> at the very
+    //   top of its <head>, which runs as soon as the FIRST bytes of the app
+    //   parse. If framing works at all, this arrives fast even on cell data.
+    //   No app-alive within ALIVE_TIMEOUT means the browser blocked the frame
+    //   → fall back to direct navigation.
+    //   Stage 2 — once alive, allow READY_TIMEOUT for the full ~3.3MB app to
+    //   finish loading and send "app-ready" (sent from its window.onload).
+    // This replaces the old single 7s timer, which raced the full download —
+    // on a slow connection the app could load fine at second 8-10 but the
+    // wrapper had already given up and redirected (looked identical to a
+    // blocked iframe).
+    const ALIVE_TIMEOUT = 4000;
+    const READY_TIMEOUT = 25000;
+
+    // Sticky fallback: a device whose iframe attempt failed remembers it and
+    // skips straight to direct navigation on later launches (no wait at all),
+    // retrying the iframe quietly once per RETRY_AFTER_MS so devices recover
+    // automatically if the block ever lifts. Cleared on any iframe success.
+    const FALLBACK_KEY = 'iframeFallbackAt';
+    const RETRY_AFTER_MS = 24 * 60 * 60 * 1000;
+
     let deferredPrompt = null;
     let _redirected = false;
     let _appAttempted = false;
+    let _appAlive = false;
     let _appSucceeded = false;
-    let _appFallbackTimer = null;
+    let _aliveTimer = null;
+    let _readyTimer = null;
 
     function redirectToApp() {
       if (_redirected) return;
@@ -175,30 +199,29 @@
       window.location.replace(APP_URL);
     }
 
+    // A fallback caused by a FAILED iframe attempt — remember it so the next
+    // launches skip the wait entirely. (Set BEFORE navigating away.)
+    function fallbackNow() {
+      try { localStorage.setItem(FALLBACK_KEY, String(Date.now())); } catch (e) {}
+      redirectToApp();
+    }
+
+    function shouldSkipIframe() {
+      try {
+        var t = parseInt(localStorage.getItem(FALLBACK_KEY) || '0', 10);
+        return !!t && (Date.now() - t) < RETRY_AFTER_MS;
+      } catch (e) { return false; }
+    }
+
     function isFirefox() {
       return /firefox/i.test(navigator.userAgent);
     }
 
     // Try the app framed first (no Google "created by a Google Apps Script
-    // user" banner this way). If it doesn't confirm it loaded within the
-    // timeout — Safari third-party cookie blocking is the known cause —
-    // fall back to a direct top-level navigation, which always works but
-    // shows Google's banner. The fallback timer is unconditional: it fires
-    // no matter what state the iframe is in, so nobody can get stuck.
-    //
-    // Timeout is 7s, not a snappier 2-3s: measured (2026-07-09) that even an
-    // UNFRAMED direct load of this ~2.6MB app takes ~2.7s to fire `load`
-    // (Google's own script.google.com -> script.googleusercontent.com
-    // redirect chain), and framing adds more overhead on top of that. A
-    // shorter timeout was firing before Chrome's iframe attempt — which
-    // works fine — ever got a chance to finish.
-    //
-    // Firefox skips the iframe attempt entirely — confirmed (2026-07-09)
-    // that Firefox's Enhanced Tracking Protection blocks it outright, which
-    // showed as a brief "can't load this page" flash before the fallback
-    // kicked in. Going straight to the direct nav avoids that flash; the
-    // end result is identical either way (Firefox always needed the
-    // fallback), this just skips the failed attempt first.
+    // user" banner this way). Firefox skips the iframe attempt entirely —
+    // confirmed (2026-07-09) that Firefox's Enhanced Tracking Protection
+    // blocks it outright, which showed as a brief "can't load this page"
+    // flash before the fallback kicked in.
     function attemptApp() {
       if (_appAttempted || _redirected) return;
       _appAttempted = true;
@@ -209,29 +232,46 @@
         return;
       }
 
+      if (shouldSkipIframe()) {
+        redirectToApp();
+        return;
+      }
+
       var frame = document.createElement('iframe');
       frame.id = 'app-frame';
       frame.setAttribute('allow', 'camera');
       frame.src = APP_URL;
       document.body.appendChild(frame);
 
-      _appFallbackTimer = setTimeout(function() {
-        if (!_appSucceeded) redirectToApp();
-      }, 7000);
+      _aliveTimer = setTimeout(function() {
+        if (!_appAlive && !_appSucceeded) fallbackNow();
+      }, ALIVE_TIMEOUT);
     }
 
-    // Listen for the "app-ready" ping the truck app itself sends once it has
-    // loaded and rendered (see index.html's window.onload) — only accept it
-    // from Google-controlled domains, since that's who's allowed to be framed.
+    // Listen for the pings the truck app itself sends — "app-alive" from the
+    // top of its <head> (framing works, content is flowing) and "app-ready"
+    // from its window.onload (fully loaded) — only accept them from
+    // Google-controlled domains, since that's who's allowed to be framed.
     window.addEventListener('message', function(event) {
       try {
         var origin = event.origin || '';
         var isGoogle = origin.endsWith('.google.com') || origin.endsWith('.googleusercontent.com');
         if (!isGoogle) return;
         var msg = event.data;
+        if (msg && msg.type === 'app-alive') {
+          _appAlive = true;
+          if (_aliveTimer) { clearTimeout(_aliveTimer); _aliveTimer = null; }
+          if (!_readyTimer && !_appSucceeded && !_redirected) {
+            _readyTimer = setTimeout(function() {
+              if (!_appSucceeded) fallbackNow();
+            }, READY_TIMEOUT);
+          }
+        }
         if (msg && msg.type === 'app-ready') {
           _appSucceeded = true;
-          if (_appFallbackTimer) { clearTimeout(_appFallbackTimer); _appFallbackTimer = null; }
+          if (_aliveTimer) { clearTimeout(_aliveTimer); _aliveTimer = null; }
+          if (_readyTimer) { clearTimeout(_readyTimer); _readyTimer = null; }
+          try { localStorage.removeItem(FALLBACK_KEY); } catch (e) {}
         }
         if (msg && msg.type === 'reload-pwa') {
           window.location.reload();
