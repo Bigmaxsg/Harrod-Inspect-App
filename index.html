@@ -32,6 +32,24 @@
       display: block;
     }
 
+    /* Shown while the framed app is starting. Solid pill on the busy
+       background photo — plain text would vanish into it. */
+    #loading-hint {
+      display: none;
+      position: fixed;
+      left: 50%;
+      bottom: 12%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.62);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 999px;
+      white-space: nowrap;
+      z-index: 9000;
+    }
+
     #install-overlay {
       display: none;
       position: fixed;
@@ -133,6 +151,8 @@
 </head>
 <body>
 
+  <div id="loading-hint">Loading Harrod Truck Inspect&hellip;</div>
+
   <div id="install-overlay">
     <div id="install-card">
       <button id="close-install" aria-label="Close">&times;</button>
@@ -175,15 +195,28 @@
     // on a slow connection the app could load fine at second 8-10 but the
     // wrapper had already given up and redirected (looked identical to a
     // blocked iframe).
-    const ALIVE_TIMEOUT = 4000;
-    const READY_TIMEOUT = 25000;
+    //
+    // 2026-09-10 — ALIVE 4s → 12s, READY 25s → 40s, plus one silent retry.
+    // Measured: the exec URL now takes 2.4–3.0s TTFB from a datacenter and
+    // serves 3.5 MB. Server latency alone ate most of the old 4s window;
+    // Google's outer frame and a real connection pushed it over routinely,
+    // and one miss set the sticky flag. Six deploys in a day (each forcing
+    // every open device to reload and re-attempt) made it "every browser".
+    // The frame was never blocked — the wrapper was just impatient.
+    const ALIVE_TIMEOUT = 12000;
+    const READY_TIMEOUT = 40000;
+    // How many frame attempts before we conclude the browser blocks framing.
+    // A second attempt hits warm caches and usually lands.
+    const ALIVE_ATTEMPTS = 2;
 
     // Sticky fallback: a device whose iframe attempt failed remembers it and
     // skips straight to direct navigation on later launches (no wait at all),
     // retrying the iframe quietly once per RETRY_AFTER_MS so devices recover
     // automatically if the block ever lifts. Cleared on any iframe success.
     const FALLBACK_KEY = 'iframeFallbackAt';
-    const RETRY_AFTER_MS = 24 * 60 * 60 * 1000;
+    // 2h, was 24h. A device that misses once should recover the same day,
+    // not tomorrow — the miss is far more likely a slow start than a block.
+    const RETRY_AFTER_MS = 2 * 60 * 60 * 1000;
 
     let deferredPrompt = null;
     let _redirected = false;
@@ -192,6 +225,7 @@
     let _appSucceeded = false;
     let _aliveTimer = null;
     let _readyTimer = null;
+    let _aliveAttempts = 0;
 
     function redirectToApp() {
       if (_redirected) return;
@@ -237,6 +271,18 @@
         return;
       }
 
+      startFrame();
+    }
+
+    // One frame attempt. Called again by its own alive-timer for the retry,
+    // so a late "app-alive" from a torn-down first frame is harmless — it
+    // just sets _appAlive and the live frame carries on to app-ready.
+    function startFrame() {
+      var old = document.getElementById('app-frame');
+      if (old && old.parentNode) old.parentNode.removeChild(old);
+      _aliveAttempts++;
+      showLoading();
+
       var frame = document.createElement('iframe');
       frame.id = 'app-frame';
       frame.setAttribute('allow', 'camera');
@@ -244,8 +290,19 @@
       document.body.appendChild(frame);
 
       _aliveTimer = setTimeout(function() {
-        if (!_appAlive && !_appSucceeded) fallbackNow();
+        if (_appAlive || _appSucceeded || _redirected) return;
+        if (_aliveAttempts < ALIVE_ATTEMPTS) { startFrame(); return; }
+        fallbackNow();
       }, ALIVE_TIMEOUT);
+    }
+
+    function showLoading() {
+      var h = document.getElementById('loading-hint');
+      if (h) h.style.display = 'block';
+    }
+    function hideLoading() {
+      var h = document.getElementById('loading-hint');
+      if (h) h.style.display = 'none';
     }
 
     // Listen for the pings the truck app itself sends — "app-alive" from the
@@ -260,6 +317,7 @@
         var msg = event.data;
         if (msg && msg.type === 'app-alive') {
           _appAlive = true;
+          hideLoading();
           if (_aliveTimer) { clearTimeout(_aliveTimer); _aliveTimer = null; }
           if (!_readyTimer && !_appSucceeded && !_redirected) {
             _readyTimer = setTimeout(function() {
