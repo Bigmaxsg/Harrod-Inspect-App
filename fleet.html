@@ -27,8 +27,31 @@
     #top-bar h1 span { color: #4fc3f7; }
     #fleet-icon { height: 72px; width: auto; flex-shrink: 0; mix-blend-mode: screen; }
     #harrod-logo { height: 32px; width: auto; flex-shrink: 0; filter: brightness(0) invert(1); }
-    .back-btn { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1); color: #cdd5e0; text-decoration: none; border: 1px solid rgba(255,255,255,0.2); border-radius: 7px; padding: 5px 12px; font-size: 0.8rem; transition: background 0.2s; }
+    .back-btn { display: inline-flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.1); color: #cdd5e0; text-decoration: none; border: 1px solid rgba(255,255,255,0.2); border-radius: 7px; padding: 5px 12px; font-size: 0.8rem; transition: background 0.2s; white-space: nowrap; }
     .back-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+
+    /* ── Phones ───────────────────────────────────────────────────────────────
+       The top bar was one non-wrapping flex row built for a wall display. At 375px the
+       72px icon, the logo and the heading ate the full width, "Back to App" wrapped onto
+       four lines, and Appearance / the refresh clock / Refresh were pushed past the right
+       edge — where `body { overflow:hidden }` CLIPS them, so they could not even be
+       scrolled to. Measured on a 375x812 viewport, not guessed. */
+    @media (max-width: 700px) {
+      #top-bar { flex-wrap: wrap; gap: 8px; padding: 8px 12px; }
+      #top-bar-left { gap: 8px; min-width: 0; }
+      #fleet-icon { height: 40px; }
+      #harrod-logo { height: 20px; }
+      #top-bar h1 { font-size: 0.9rem; white-space: nowrap; }
+      /* Controls get their own full-width row rather than fighting the branding for space. */
+      #top-bar-right { width: 100%; gap: 8px; justify-content: flex-start; flex-wrap: wrap; }
+      #refresh-info { text-align: left; font-size: 0.68rem; }
+      #settings-btn, #refresh-btn { white-space: nowrap; }
+    }
+    @media (max-width: 420px) {
+      /* Tightest phones: the wordmark is the first thing that can go — the fleet icon
+         already identifies the page, and the heading still says what it is. */
+      #harrod-logo { display: none; }
+    }
     #top-bar-right { display: flex; align-items: center; gap: 12px; }
     #refresh-info { font-size: 0.75rem; color: #8fa8c8; text-align: right; }
     #last-updated { display: block; }
