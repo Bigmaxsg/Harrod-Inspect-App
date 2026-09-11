@@ -258,6 +258,10 @@
     <h1><span>Fleet Live View</span></h1>
   </div>
   <div id="top-bar-right">
+    <!-- Back to the app. The .back-btn style existed here from the start with nothing using
+         it; on an installed PWA there is no browser chrome, so without this the fleet board
+         is a dead end (Max, 2026-09-11). -->
+    <a class="back-btn" href="#" onclick="backToApp(event)">← Back to App</a>
     <button id="settings-btn" onclick="openSettings()">⚙ Appearance</button>
     <div id="refresh-info">
       <span id="last-updated">Loading...</span>
@@ -361,6 +365,26 @@
 </div>
 <script>
   var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec';
+
+  // Back to the app. Two paths, because how this page was opened differs by device:
+  //   desktop  -> the app's button opened a new tab, so window.close() lands the user back
+  //               on the app with their session untouched.
+  //   phone    -> an installed PWA has no chrome and may refuse to close a tab it did not
+  //               open. Browsers refuse SILENTLY -- window.close() returns nothing to test --
+  //               so the fallback runs on a timer: if this page is still here, close failed.
+  // The target is the WRAPPER, never the GAS exec URL: the wrapper loads the app in its
+  // iframe, while the exec URL shows Google's unremovable "created by a Google Apps Script
+  // user" banner (COUPLING_MAP Group 38).
+  var APP_HOME = 'https://bigmaxsg.github.io/Harrod-Inspect-App/';
+
+  function backToApp(ev) {
+    if (ev && ev.preventDefault) ev.preventDefault();
+    try { window.close(); } catch (e) {}
+    setTimeout(function () {
+      if (!document.hidden) window.location.href = APP_HOME;
+    }, 220);
+    return false;
+  }
   var POLL_INTERVAL = 30 * 1000;
   var LOCATIONS   = ['Frankfort', 'Lexington'];
   var TRUCK_TYPES = ['Concrete Mixer', 'Dump Truck', 'Tractor', 'Tanker'];
