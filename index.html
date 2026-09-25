@@ -334,6 +334,24 @@
         if (msg && msg.type === 'reload-pwa') {
           window.location.reload();
         }
+        // 2026-09-25 (app v591): iPhone "keep me signed in". The app runs as a third-party frame
+        // (script.googleusercontent.com) and WebKit wipes a third-party frame's localStorage between
+        // launches and blocks its cookies, so a personal device lost its login every time the home-screen
+        // app was closed. THIS page is first-party in the home-screen app and keeps its storage, so the app
+        // mirrors a personal device's session here and asks for it on startup. Only the app's own frame
+        // (googleusercontent) may save, clear or read it; the reply goes back to that exact frame and origin.
+        if (msg && typeof msg.type === 'string' && msg.type.indexOf('tca-') === 0 && origin.endsWith('.googleusercontent.com')) {
+          var SESSION_KEY = 'tca_wrapper_session';
+          if (msg.type === 'tca-session-save' && msg.session && msg.session.fullName) {
+            try { localStorage.setItem(SESSION_KEY, JSON.stringify(msg.session)); } catch (e) {}
+          } else if (msg.type === 'tca-session-clear') {
+            try { localStorage.removeItem(SESSION_KEY); } catch (e) {}
+          } else if (msg.type === 'tca-session-request' && event.source) {
+            var saved = null;
+            try { saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null'); } catch (e) {}
+            event.source.postMessage({ type: 'tca-session-restore', session: saved }, origin);
+          }
+        }
       } catch (e) { /* ignore malformed messages */ }
     });
 
