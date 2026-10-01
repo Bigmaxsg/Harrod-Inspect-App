@@ -83,6 +83,13 @@
     .sections-wrap { flex: 1; min-height: 0; display: grid; grid-template-columns: 4fr 5fr 2fr; gap: 10px; align-items: stretch; width: 100%; overflow-x: hidden; }
     .sections-wrap.layout-idle { grid-template-columns: 2fr 7fr 2fr; }
     .section-block { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+    /* Drag handles between the three sections. They are grid columns of their own
+       (the wrap's gap is 0 when they are present), so dragging one only resizes its two
+       neighbours. touch-action:none lets a finger drag them on a touch screen. */
+    .sec-handle { cursor: col-resize; touch-action: none; position: relative; min-width: 0; }
+    .sec-handle::after { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 4px; margin-left: -2px; border-radius: 2px; background: #2a4a7f; transition: background 0.15s; }
+    .sec-handle:hover::after, .sec-handle.dragging::after { background: #4fc3f7; }
+    body.sec-dragging, body.sec-dragging * { cursor: col-resize !important; user-select: none !important; }
     .section-header { display: flex; align-items: center; gap: 7px; padding: 8px 12px; border-radius: 8px 8px 0 0; font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; }
     .section-header.green  { background: #1b3d1e; color: #a5d6a7; border-bottom: 2px solid #2e7d32; }
     .section-header.yellow { background: #3d3000; color: #fff176; border-bottom: 2px solid #f9a825; }
@@ -119,10 +126,12 @@
   z-index: 2;
 }
 
+/* The photo is IN the top row now (it used to be position:absolute at a fixed size, so on
+   a short card it slid down behind the driver box). fitGridToSection sets its width/height
+   per card to the room actually left; --truck-thumb-size is only the starting size. */
 .card-front-thumb {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+  position: relative;
+  flex-shrink: 0;
   width: var(--truck-thumb-size);
   height: var(--truck-thumb-size);
   border-radius: 6px;
@@ -170,12 +179,11 @@
     .card-admin-update-comment { font-size: 0.72rem; color: #ffcc80; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
     .card-admin-update-more { font-size: 0.65rem; color: #f57c00; margin-top: 2px; }
 
-    /* compact mode — only truck # + type chip, no thumbnail */
+    /* Small cards: fitGridToSection drops the LOWER lines one at a time (tap hint first)
+       until the truck number and the photo fit. The number row and the photo are never
+       hidden (Max, 2026-10-01: "i don't want the photos to disappear nor ... the truck number"). */
     .card-compact { padding: 5px 8px; }
-    .card-compact > *:not(.card-top-row) { display: none; }
-    .card-compact .card-front-thumb { display: none; }
-    /* thumbnail hidden at mid-size cards, restored when cards grow large enough */
-    .card-no-thumb .card-front-thumb { display: none; }
+    .truck-card .fv-drop { display: none !important; }
     #drawer-backdrop { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300; }
     #drawer-backdrop.open { display: block; }
     #drawer { position: fixed; top: 0; right: -440px; width: 420px; max-width: 96vw; height: 100vh; background: #0e1a2e; border-left: 2px solid #2a4a7f; z-index: 301; overflow-y: auto; transition: right 0.3s ease; box-shadow: -4px 0 24px rgba(0,0,0,0.5); display: flex; flex-direction: column; }
@@ -265,6 +273,7 @@
     .sp-lbl { font-size: 0.72rem; color: #8fa8c8; min-width: 88px; flex-shrink: 0; }
     .sp-val { font-size: 0.72rem; color: #fff; min-width: 48px; text-align: right; flex-shrink: 0; }
     .sp-slider { flex: 1; accent-color: #4fc3f7; cursor: pointer; min-width: 0; }
+    .sp-note { font-size: 0.68rem; color: #8fa8c8; line-height: 1.4; }
     .sp-color { width: 30px; height: 24px; border: 1px solid rgba(255,255,255,0.2); border-radius: 5px; cursor: pointer; background: transparent; padding: 1px; flex-shrink: 0; }
     .sp-toggle { display: flex; gap: 3px; flex-shrink: 0; }
     .sp-toggle-btn { padding: 2px 8px; border-radius: 5px; font-size: 0.72rem; font-weight: 700; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.06); color: #9ac3e8; cursor: pointer; transition: all 0.15s; line-height: 1.4; }
@@ -330,7 +339,7 @@
     </div>
     <div class="sp-section">
       <div class="sp-section-title">Images</div>
-      <div class="sp-row"><span class="sp-lbl">Truck Photo</span><input type="range" class="sp-slider" id="sp-truckThumb" min="0" max="120" step="4" oninput="spUpdate()"><span class="sp-val" id="spv-truckThumb">84px</span></div>
+      <div class="sp-row"><span class="sp-lbl">Truck Photo max</span><input type="range" class="sp-slider" id="sp-truckThumb" min="24" max="160" step="4" oninput="spUpdate()"><span class="sp-val" id="spv-truckThumb">84px</span></div>
       <div class="sp-row"><span class="sp-lbl">Driver Photo</span><input type="range" class="sp-slider" id="sp-driverAv" min="0" max="80" step="2" oninput="spUpdate()"><span class="sp-val" id="spv-driverAv">44px</span></div>
     </div>
     <div class="sp-section">
@@ -369,13 +378,12 @@
       <div class="sp-row"><span class="sp-lbl">Color</span><input type="color" class="sp-color" id="sp-hintColor" oninput="spUpdate()"></div>
     </div>
     <div class="sp-section">
-      <div class="sp-section-title">Section Column Ratios</div>
-      <div class="sp-row"><span class="sp-lbl">In Use weight</span><input type="range" class="sp-slider" id="sp-inUseMult" min="0.3" max="4.0" step="0.1" oninput="spUpdate()"><span class="sp-val" id="spv-inUseMult">1.3×</span></div>
-      <div class="sp-row"><span class="sp-lbl">Idle weight</span><input type="range" class="sp-slider" id="sp-idleMult" min="0.3" max="4.0" step="0.1" oninput="spUpdate()"><span class="sp-val" id="spv-idleMult">1.0×</span></div>
-      <div class="sp-row"><span class="sp-lbl">Red Tag weight</span><input type="range" class="sp-slider" id="sp-redMult" min="0.1" max="4.0" step="0.1" oninput="spUpdate()"><span class="sp-val" id="spv-redMult">0.5×</span></div>
-      <div class="sp-row"><span class="sp-lbl">In Use min fr</span><input type="range" class="sp-slider" id="sp-inUseMinFr" min="1" max="15" step="1" oninput="spUpdate()"><span class="sp-val" id="spv-inUseMinFr">4</span></div>
-      <div class="sp-row"><span class="sp-lbl">Idle min fr</span><input type="range" class="sp-slider" id="sp-idleMinFr" min="1" max="15" step="1" oninput="spUpdate()"><span class="sp-val" id="spv-idleMinFr">3</span></div>
-      <div class="sp-row"><span class="sp-lbl">Red Tag min fr</span><input type="range" class="sp-slider" id="sp-redMinFr" min="1" max="10" step="1" oninput="spUpdate()"><span class="sp-val" id="spv-redMinFr">2</span></div>
+      <div class="sp-section-title">Section Widths</div>
+      <div class="sp-row"><span class="sp-lbl">In Use</span><input type="range" class="sp-slider" id="sp-secInUse" min="5" max="90" step="1" oninput="spSecSlide('secInUse')"><span class="sp-val" id="spv-secInUse">36%</span></div>
+      <div class="sp-row"><span class="sp-lbl">Not In Use</span><input type="range" class="sp-slider" id="sp-secIdle" min="5" max="90" step="1" oninput="spSecSlide('secIdle')"><span class="sp-val" id="spv-secIdle">46%</span></div>
+      <div class="sp-row"><span class="sp-lbl">Red Tag</span><input type="range" class="sp-slider" id="sp-secRed" min="5" max="90" step="1" oninput="spSecSlide('secRed')"><span class="sp-val" id="spv-secRed">18%</span></div>
+      <div class="sp-row"><span class="sp-lbl">Follow truck count</span><input type="range" class="sp-slider" id="sp-secFollow" min="0" max="90" step="5" oninput="spUpdate()"><span class="sp-val" id="spv-secFollow">50%</span></div>
+      <div class="sp-note">The three widths add up to 100%. Drag the edges between the sections to set them. Follow truck count: 0% keeps the widths exactly where you set them; higher lets a section grow when it has more trucks.</div>
     </div>
     <div class="sp-section">
       <div class="sp-section-title">Card Colors</div>
@@ -421,7 +429,7 @@
   // ── Appearance Settings ─────────────────────────────────────────────────
   var SP_DEFAULTS = {
     cardMaxH:180, cardMaxW:158, truckThumb:84, driverAv:44,
-    inUseMult:1.3, idleMult:1.0, redMult:0.5, inUseMinFr:4, idleMinFr:3, redMinFr:2,
+    secInUse:36, secIdle:46, secRed:18, secFollow:50,
     cardNumSize:1.22, cardNumWeight:900, cardNumStyle:'normal', cardNumColor:'#0d2a5e',
     chipSize:0.69, chipWeight:700, chipColor:'#3a5a8c', chipBg:'#e8edf8',
     makeSize:0.77, makeWeight:400, makeStyle:'normal', makeColor:'#5a6e8a',
@@ -435,7 +443,118 @@
 
   function spLoad() {
     try { var s = localStorage.getItem('fleet-appearance'); if (s) _sp = Object.assign({}, SP_DEFAULTS, JSON.parse(s)); } catch(e) {}
+    // The old "Section Column Ratios" keys (weight x truck count, min fr) were replaced by
+    // secInUse/secIdle/secRed/secFollow on 2026-10-01; drop them so they are not saved again.
+    ['inUseMult','idleMult','redMult','inUseMinFr','idleMinFr','redMinFr'].forEach(function(k){ delete _sp[k]; });
+    _secNormalize();
   }
+
+  // ── Section widths ──────────────────────────────────────────────────────
+  // Each section's width = a mix of YOUR split (secInUse/secIdle/secRed, adding to 100) and
+  // its share of the trucks on screen. secFollow (0-90%) is how much the truck share counts.
+  // Capped at 90% so a dragged edge can always be turned back into a split.
+  var SEC_KEYS = ['secInUse', 'secIdle', 'secRed'];
+  var SEC_MIN = 5;   // no section narrower than 5% of the row
+  function _secNormalize() {
+    var v = SEC_KEYS.map(function(k){ var n = Number(_sp[k]); return isFinite(n) && n > 0 ? n : SEC_MIN; });
+    var tot = v[0] + v[1] + v[2];
+    v = v.map(function(n){ return Math.max(SEC_MIN, n * 100 / tot); });
+    var r = v.map(function(n){ return Math.round(n); });
+    r[1] += 100 - (r[0] + r[1] + r[2]);   // rounding remainder goes to the middle section
+    SEC_KEYS.forEach(function(k, i){ _sp[k] = r[i]; });
+    var f = Number(_sp.secFollow);
+    _sp.secFollow = isFinite(f) ? Math.max(0, Math.min(90, f)) : SEC_DEFAULT_FOLLOW;
+  }
+  var SEC_DEFAULT_FOLLOW = 50;
+  // Widths (percent, three numbers adding to 100) for these truck counts.
+  function _secWidths(counts) {
+    var f = _sp.secFollow / 100;
+    var tot = counts[0] + counts[1] + counts[2];
+    var w = SEC_KEYS.map(function(k, i){
+      var share = tot > 0 ? counts[i] * 100 / tot : _sp[k];
+      return (1 - f) * _sp[k] + f * share;
+    });
+    w = w.map(function(n){ return Math.max(SEC_MIN, n); });
+    var s = w[0] + w[1] + w[2];
+    return w.map(function(n){ return n * 100 / s; });
+  }
+  // The split that gives exactly these widths at these truck counts (used when an edge is dropped).
+  function _secSplitFor(widths, counts) {
+    var f = _sp.secFollow / 100;
+    var tot = counts[0] + counts[1] + counts[2];
+    return widths.map(function(w, i){
+      var share = tot > 0 ? counts[i] * 100 / tot : w;
+      return Math.max(1, (w - f * share) / (1 - f));
+    });
+  }
+  function _secColumns(w) {
+    return w[0].toFixed(3) + 'fr 12px ' + w[1].toFixed(3) + 'fr 12px ' + w[2].toFixed(3) + 'fr';
+  }
+  // One slider moved: the other two give up / take the difference in proportion.
+  function spSecSlide(key) {
+    var v = Math.max(SEC_MIN, Math.min(90, parseInt(_el('sp-' + key).value, 10) || SEC_MIN));
+    var others = SEC_KEYS.filter(function(k){ return k !== key; });
+    var oTot = _sp[others[0]] + _sp[others[1]];
+    var rest = 100 - v;
+    var a = oTot > 0 ? Math.round(rest * _sp[others[0]] / oTot) : Math.round(rest / 2);
+    a = Math.max(SEC_MIN, Math.min(rest - SEC_MIN, a));
+    _sp[key] = v; _sp[others[0]] = a; _sp[others[1]] = rest - a;
+    _secSyncUI(); spApplyCss(); spSave();
+  }
+  function _secSyncUI() {
+    SEC_KEYS.forEach(function(k){ _el('sp-' + k).value = _sp[k]; _el('spv-' + k).textContent = _sp[k] + '%'; });
+    _el('sp-secFollow').value = _sp.secFollow; _el('spv-secFollow').textContent = _sp.secFollow + '%';
+  }
+
+  // Dragging an edge. Live: only the dragged row's columns change (cheap). On release: the
+  // split that reproduces the dropped widths at today's truck counts is saved, the sliders
+  // show it, and every pane re-renders from it -- so what you see is what is stored.
+  var _secDrag = null;
+  function _secDragStart(ev, handleIdx) {
+    var wrap = ev.currentTarget.parentNode;
+    var blocks = wrap.querySelectorAll('.section-block');
+    if (blocks.length !== 3) return;
+    ev.preventDefault();
+    var px = Array.prototype.map.call(blocks, function(b){ return b.getBoundingClientRect().width; });
+    var sum = px[0] + px[1] + px[2];
+    _secDrag = {
+      wrap: wrap, handle: ev.currentTarget, idx: handleIdx, startX: ev.clientX, sumPx: sum,
+      startW: px.map(function(p){ return p * 100 / sum; }),
+      w: null,
+      counts: (wrap.getAttribute('data-counts') || '0,0,0').split(',').map(Number)
+    };
+    _secDrag.w = _secDrag.startW.slice();
+    ev.currentTarget.classList.add('dragging');
+    document.body.classList.add('sec-dragging');
+    try { ev.currentTarget.setPointerCapture(ev.pointerId); } catch (e) {}
+  }
+  function _secDragMove(ev) {
+    var d = _secDrag; if (!d) return;
+    var deltaPct = (ev.clientX - d.startX) * 100 / d.sumPx;
+    var a = d.idx, b = d.idx + 1;
+    var pair = d.startW[a] + d.startW[b];
+    var na = Math.max(SEC_MIN, Math.min(pair - SEC_MIN, d.startW[a] + deltaPct));
+    d.w = d.startW.slice(); d.w[a] = na; d.w[b] = pair - na;
+    d.wrap.style.gridTemplateColumns = _secColumns(d.w);
+    // Live readout in the panel while dragging (what will be stored on release).
+    var split = _secSplitFor(d.w, d.counts);
+    var s = split[0] + split[1] + split[2];
+    SEC_KEYS.forEach(function(k, i){ var el = _el('spv-' + k); if (el) el.textContent = Math.round(split[i] * 100 / s) + '%'; });
+    if (!d.raf) d.raf = requestAnimationFrame(function(){ d.raf = 0; d.wrap.querySelectorAll('.card-grid').forEach(fitGridToSection); });
+  }
+  function _secDragEnd() {
+    var d = _secDrag; if (!d) return;
+    _secDrag = null;
+    d.handle.classList.remove('dragging');
+    document.body.classList.remove('sec-dragging');
+    var split = _secSplitFor(d.w, d.counts);
+    SEC_KEYS.forEach(function(k, i){ _sp[k] = split[i]; });
+    _secNormalize();
+    _secSyncUI(); spApplyCss(); spSave();
+  }
+  window.addEventListener('pointermove', _secDragMove);
+  window.addEventListener('pointerup', _secDragEnd);
+  window.addEventListener('pointercancel', _secDragEnd);
   function spSave() {
     try { localStorage.setItem('fleet-appearance', JSON.stringify(_sp)); } catch(e) {}
   }
@@ -502,12 +621,7 @@
     _el('sp-defectBold').classList.toggle('active',_sp.defectWeight>=600);
     _el('sp-hintSize').value=_sp.hintSize; _el('spv-hintSize').textContent=_sp.hintSize.toFixed(2)+'rem';
     _el('sp-hintColor').value=_sp.hintColor;
-    _el('sp-inUseMult').value=_sp.inUseMult; _el('spv-inUseMult').textContent=_sp.inUseMult.toFixed(1)+'×';
-    _el('sp-idleMult').value=_sp.idleMult;   _el('spv-idleMult').textContent=_sp.idleMult.toFixed(1)+'×';
-    _el('sp-redMult').value=_sp.redMult;     _el('spv-redMult').textContent=_sp.redMult.toFixed(1)+'×';
-    _el('sp-inUseMinFr').value=_sp.inUseMinFr; _el('spv-inUseMinFr').textContent=_sp.inUseMinFr;
-    _el('sp-idleMinFr').value=_sp.idleMinFr;   _el('spv-idleMinFr').textContent=_sp.idleMinFr;
-    _el('sp-redMinFr').value=_sp.redMinFr;     _el('spv-redMinFr').textContent=_sp.redMinFr;
+    _secSyncUI();
     _el('sp-cardBg').value=_sp.cardBg;
     _el('sp-inuseBorder').value=_sp.inuseBorder; _el('sp-idleBorder').value=_sp.idleBorder;
     _el('sp-redtagBorder').value=_sp.redtagBorder;
@@ -522,10 +636,7 @@
     _sp.driverLabelSize=parseFloat(_el('sp-driverLabelSize').value); _sp.driverLabelColor=_el('sp-driverLabelColor').value;
     _sp.defectSize=parseFloat(_el('sp-defectSize').value); _sp.defectOkColor=_el('sp-defectOkColor').value; _sp.defectWarnColor=_el('sp-defectWarnColor').value;
     _sp.hintSize=parseFloat(_el('sp-hintSize').value); _sp.hintColor=_el('sp-hintColor').value;
-    _sp.inUseMult=parseFloat(_el('sp-inUseMult').value); _sp.idleMult=parseFloat(_el('sp-idleMult').value); _sp.redMult=parseFloat(_el('sp-redMult').value);
-    _sp.inUseMinFr=parseInt(_el('sp-inUseMinFr').value); _sp.idleMinFr=parseInt(_el('sp-idleMinFr').value); _sp.redMinFr=parseInt(_el('sp-redMinFr').value);
-    _el('spv-inUseMult').textContent=_sp.inUseMult.toFixed(1)+'×'; _el('spv-idleMult').textContent=_sp.idleMult.toFixed(1)+'×'; _el('spv-redMult').textContent=_sp.redMult.toFixed(1)+'×';
-    _el('spv-inUseMinFr').textContent=_sp.inUseMinFr; _el('spv-idleMinFr').textContent=_sp.idleMinFr; _el('spv-redMinFr').textContent=_sp.redMinFr;
+    _sp.secFollow=parseInt(_el('sp-secFollow').value,10); _el('spv-secFollow').textContent=_sp.secFollow+'%';
     _sp.cardBg=_el('sp-cardBg').value; _sp.inuseBorder=_el('sp-inuseBorder').value; _sp.idleBorder=_el('sp-idleBorder').value; _sp.redtagBorder=_el('sp-redtagBorder').value;
     _el('spv-cardMaxH').textContent=_sp.cardMaxH+'px'; _el('spv-cardMaxW').textContent=_sp.cardMaxW+'px';
     _el('spv-truckThumb').textContent=_sp.truckThumb+'px'; _el('spv-driverAv').textContent=_sp.driverAv+'px';
@@ -699,14 +810,9 @@
     var idle   = sortTrucks(filtered.filter(function(t) { return t.status === 'not_in_use'; }));
     var redtag = sortTrucks(filtered.filter(function(t) { return t.status === 'red_tagged'; }));
     var fl = af ? ' - ' + af + 's' : '';
-    var hasInUse = inUse.length > 0;
-    var inFr  = Math.max(_sp.inUseMinFr, Math.round(inUse.length  * _sp.inUseMult));
-    var idlFr = Math.max(_sp.idleMinFr,  Math.round(idle.length   * _sp.idleMult));
-    var redFr = Math.max(_sp.redMinFr,   Math.round(redtag.length * _sp.redMult));
-    var colStyle = hasInUse
-      ? 'grid-template-columns:' + inFr + 'fr ' + idlFr + 'fr ' + redFr + 'fr'
-      : 'grid-template-columns:2fr 7fr 2fr';
-    var wrapAttr = 'class="sections-wrap" style="' + colStyle + '"';
+    var counts = [inUse.length, idle.length, redtag.length];
+    var colStyle = 'gap:0;grid-template-columns:' + _secColumns(_secWidths(counts));
+    var wrapAttr = 'class="sections-wrap" data-counts="' + counts.join(',') + '" style="' + colStyle + '"';
     var sum = '<div class="summary-bar">'
       + si('#66bb6a', inUse.length  + ' In Use')
       + si('#ffee58', idle.length   + ' Not In Use')
@@ -717,9 +823,11 @@
       + '<div class="section-block">'
       + buildSection('green',  'IN USE TODAY', inUse,  buildInUseCard)
       + '</div>'
+      + '<div class="sec-handle" title="Drag to resize" onpointerdown="_secDragStart(event,0)"></div>'
       + '<div class="section-block">'
       + buildSection('yellow', 'NOT IN USE',   idle,   buildIdleCard)
       + '</div>'
+      + '<div class="sec-handle" title="Drag to resize" onpointerdown="_secDragStart(event,1)"></div>'
       + '<div class="section-block">'
       + buildSection('red',    'RED TAGGED',   redtag, buildRedTagCard)
       + '</div>'
@@ -735,6 +843,7 @@
     gridEl.style.gridTemplateRows = '';
     gridEl.style.overflowY = '';
     cards.forEach(function(c) { c.style.width = ''; c.style.height = ''; c.style.overflow = ''; c.classList.remove('card-compact'); });
+    // (photo size and dropped lines are reset per card in _fitCardContent)
     if (!N) return;
 
     var GAP = 7, PAD = 8;
@@ -759,7 +868,6 @@
     cardW = Math.min(cardW, MAX_W);
     cardH = Math.min(cardH, MAX_H);
     var compact = cardH < 65;
-    var noThumb = cardH < 110 || cardW < 130;
 
     gridEl.style.gridTemplateColumns = 'repeat(' + bestCols + ', ' + cardW + 'px)';
     gridEl.style.gridTemplateRows    = 'repeat(' + rows    + ', ' + cardH + 'px)';
@@ -771,8 +879,70 @@
       card.style.height   = cardH + 'px';
       card.style.overflow = 'hidden';
       card.classList.toggle('card-compact', compact);
-      card.classList.toggle('card-no-thumb', !compact && noThumb);
+      _fitCardContent(card, cardW, cardH);
     });
+  }
+
+  // Fit one card's insides to its box. The truck number row and the photo always stay;
+  // the photo grows up to the "Truck Photo max" slider, never past half the card's width,
+  // and only into height the lines below it do not need. When even the smallest photo
+  // will not fit, the lowest line is hidden and we try again (tap hint goes first).
+  var THUMB_MIN = 28;
+  var CARD_DROP_ORDER = ['.click-hint', '.card-admin-update', '.card-last-trip', '.card-defect-ok',
+    '.card-defect-warn', '.card-redtag-reason', '.card-elapsed', '.card-pretrip-time',
+    '.card-driver-row', '.card-make'];
+  function _fitCardContent(card, cardW, cardH) {
+    Array.prototype.forEach.call(card.querySelectorAll('.fv-drop'), function(el){ el.classList.remove('fv-drop'); });
+    var thumb = card.querySelector('.card-front-thumb');
+    var top = card.querySelector('.card-top-row');
+    var numWrap = card.querySelector('.card-num-wrap');
+    if (!top) return;
+    top.style.flexWrap = '';
+    if (numWrap) { numWrap.style.flex = ''; numWrap.style.minWidth = ''; }
+    var cs = getComputedStyle(card);
+    var padV = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    var padH = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight) + 3; /* + left border */
+    var GAP = parseFloat(cs.rowGap) || 6, TOPGAP = 6;
+    var innerW = Math.floor(cardW - padH);
+    // Natural width of the number / type chip (the wrap itself is flex:1, so measure its children).
+    var numNeedW = 0;
+    if (numWrap) Array.prototype.forEach.call(numWrap.children, function(el){ numNeedW = Math.max(numNeedW, Math.ceil(el.scrollWidth)); });
+    if (numWrap) numWrap.style.minWidth = numNeedW + 'px';
+    if (thumb) { thumb.style.width = thumb.style.height = '16px'; }
+    var numH = numWrap ? numWrap.offsetHeight : 0;
+    // Beside the number the photo gets at most half the card and never squeezes the number;
+    // under the number it gets the full width but only the height left below it.
+    var besideW = Math.min(Math.floor(cardW * 0.5), innerW - numNeedW - TOPGAP);
+    function restHeight() {
+      var h = 0, n = 0;
+      Array.prototype.forEach.call(card.children, function(el){
+        if (el === top || el.classList.contains('fv-drop')) return;
+        if (getComputedStyle(el).display === 'none') return;
+        h += el.offsetHeight; n++;
+      });
+      return h + n * GAP;
+    }
+    function fit() {
+      var room = cardH - padV - restHeight();
+      var beside = besideW > 0 ? Math.min(_sp.truckThumb, besideW, room) : 0;
+      var under  = Math.min(_sp.truckThumb, innerW, room - numH - TOPGAP);
+      return beside >= under ? { size: beside, stacked: false, room: room } : { size: under, stacked: true, room: room };
+    }
+    var f = fit(), i = 0;
+    // Lowest line goes first until the photo can be a usable size (or the number alone fits).
+    while ((thumb ? f.size < THUMB_MIN : f.room < numH) && i < CARD_DROP_ORDER.length) {
+      var victims = card.querySelectorAll(':scope > ' + CARD_DROP_ORDER[i++] + ':not(.fv-drop)');
+      if (!victims.length) continue;
+      Array.prototype.forEach.call(victims, function(el){ el.classList.add('fv-drop'); });
+      f = fit();
+    }
+    if (!thumb) return;
+    if (f.stacked) {
+      top.style.flexWrap = 'wrap';
+      if (numWrap) numWrap.style.flex = '1 0 100%';   // number takes the whole first line
+    }
+    var size = Math.max(16, Math.floor(f.size));      // never hidden: 16px is the floor
+    thumb.style.width = thumb.style.height = size + 'px';
   }
 
   function fitAllGrids() {
