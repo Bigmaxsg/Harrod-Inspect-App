@@ -851,14 +851,20 @@
     var availH = gridEl.clientHeight - PAD * 2;
     if (availW < 20 || availH < 20) return;
 
+    // Score each column count by the card it would REALLY draw -- capped at the Max Width /
+    // Max Height sliders. Scoring the uncapped cell made 4 and 5 columns look different when
+    // both draw the same capped card, and the first one found won: an extra row with empty
+    // room on the right (Max, 2026-10-01). Scored against the slider shape, so 185x230 beats
+    // 190x209 for a 190x230 setting. On a tie, more columns / fewer rows wins.
     var bestCols = 1, bestMin = 0;
     for (var c = 1; c <= N; c++) {
       var r = Math.ceil(N / c);
-      var w = (availW - GAP * (c - 1)) / c;
-      var h = (availH - GAP * (r - 1)) / r;
+      var w = Math.min((availW - GAP * (c - 1)) / c, _sp.cardMaxW);
+      var h = Math.min((availH - GAP * (r - 1)) / r, _sp.cardMaxH);
       if (w <= 0 || h <= 0) continue;
-      var m = Math.min(w, h);
-      if (m > bestMin) { bestMin = m; bestCols = c; }
+      // How close the card gets to the Max Width x Max Height the sliders ask for (1 = full size).
+      var m = Math.min(w / _sp.cardMaxW, h / _sp.cardMaxH);
+      if (m >= bestMin - 0.002) { if (m > bestMin) bestMin = m; bestCols = c; }
     }
 
     var rows  = Math.ceil(N / bestCols);
