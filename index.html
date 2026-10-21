@@ -4,7 +4,11 @@
   <meta charset="utf-8">
   <title>Truck Condition Logger</title>
 
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <!-- 2026-10-21: interactive-widget=resizes-content -- Chrome on Android otherwise lays the keyboard OVER the page
+       (the default since Chrome 108), so the framed app never shrinks and the box being typed in sits under the
+       keyboard (Max: a Samsung Galaxy driver's screen "is being covered up by the keyboard"). With it, the page and
+       the 100%-high iframe shrink, and the app scrolls the focused box into view itself. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Harrod Truck Inspect">
@@ -217,6 +221,16 @@
     // 2h, was 24h. A device that misses once should recover the same day,
     // not tomorrow — the miss is far more likely a slow start than a block.
     const RETRY_AFTER_MS = 2 * 60 * 60 * 1000;
+
+    // 2026-10-21 -- ?install (e.g. .../Harrod-Inspect-App/?install). A phone whose iframe attempt once timed out
+    // jumps straight to the Google page on every visit (sticky fallback above), so "Add to home screen" there saved
+    // Google's page: an orange "G" icon with a Chrome badge instead of ours (Max, a Samsung Galaxy driver). This link
+    // forgets the fallback and the "already dismissed" flag, shows the install card and does NOT load the app until
+    // the card is closed or the install finishes. The installed icon opens start_url (./index.html, no ?install).
+    const FORCE_INSTALL = /[?&]install\b/i.test(window.location.search);
+    if (FORCE_INSTALL) {
+      try { localStorage.removeItem(FALLBACK_KEY); localStorage.removeItem('installPromptDismissed'); } catch (e) {}
+    }
 
     let deferredPrompt = null;
     let _redirected = false;
@@ -440,7 +454,7 @@
       e.preventDefault();
       deferredPrompt = e;
 
-      if (!isInStandaloneMode() && !hasDismissedInstallPrompt() && isAndroid()) {
+      if (!isInStandaloneMode() && (FORCE_INSTALL || !hasDismissedInstallPrompt()) && isAndroid()) {
         setAndroidInstructions();
         showOverlay();
       }
@@ -460,7 +474,7 @@
         return;
       }
 
-      if (hasDismissedInstallPrompt()) {
+      if (hasDismissedInstallPrompt() && !FORCE_INSTALL) {
         attemptApp();
         return;
       }
