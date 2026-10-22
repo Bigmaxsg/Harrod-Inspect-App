@@ -56,6 +56,9 @@
     #refresh-info { font-size: 0.75rem; color: #8fa8c8; text-align: right; }
     #last-updated { display: block; }
     #next-refresh { display: block; color: #6b90b8; font-size: 0.68rem; }
+    /* Refresh text never changes size (it used to collapse while refreshing and move the whole board). */
+    #refresh-info { min-width: 9.5em; }
+    #last-updated, #next-refresh { min-height: 1.35em; white-space: nowrap; }
     #refresh-btn { background: #1565c0; color: #fff; border: none; border-radius: 7px; padding: 6px 14px; font-size: 0.8rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px; }
     #refresh-btn:hover { background: #1976d2; }
     #refresh-btn.spinning svg { animation: spin 1s linear infinite; }
@@ -678,6 +681,7 @@
     }
     loadFleetData();
   });
+  var _lastBoardSig = '';
   function loadFleetData() {
     if (_isLoading) return;
     _isLoading = true;
@@ -692,7 +696,10 @@
         document.getElementById('loading-overlay').style.display = 'none';
         document.getElementById('error-msg').style.display = 'none';
         if (data.lastModified) _lastKnownTimestamp = data.lastModified;
-        renderAll(data.trucks || []);
+        // Redraw only when something on the board changed -- the poll fires on any change anywhere in the app.
+        var sig = JSON.stringify(data.trucks || []);
+        if (sig !== _lastBoardSig) { _lastBoardSig = sig; renderAll(data.trucks || []); }
+        else updateElapsedTimes();
         document.getElementById('last-updated').textContent = 'Updated ' + fmtTime(new Date());
         schedulePoll();
       })
@@ -773,6 +780,8 @@
       if (el) el.textContent = byLoc[loc].length;
     });
     var panesEl = document.getElementById('panes');
+    var _keepH = panesEl.offsetHeight;   // hold the board's height while it is rebuilt (no collapse / jump)
+    if (_keepH) panesEl.style.minHeight = _keepH + 'px';
     panesEl.innerHTML = '';
     var locsToRender = _lockedLoc ? LOCATIONS.filter(function(l) { return l === _lockedLoc; }) : LOCATIONS;
     locsToRender.forEach(function(loc) {
@@ -792,6 +801,8 @@
       panesEl.appendChild(pane);
       renderPane(loc);
     });
+    fitAllGrids();   // size the cards now, before the browser paints the unsized ones
+    requestAnimationFrame(function() { panesEl.style.minHeight = ''; });
     updateElapsedTimes();
     startClock();
   }
