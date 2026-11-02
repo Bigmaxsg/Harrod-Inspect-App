@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Harrod Truck Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0e1a2e; color: #f0f4f8; display: flex; flex-direction: column; overflow: hidden; }
+    #top { background: #14233b; border-bottom: 2px solid #2a4a7f; padding: 8px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; position: relative; z-index: 1000; }
+    h1 { font-size: 1.05rem; font-weight: 700; color: #fff; white-space: nowrap; }
+    #counts { display: flex; gap: 6px; }
+    .chip { display: inline-flex; align-items: center; gap: 5px; background: #22375a; border-radius: 12px; padding: 3px 9px; font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; border: 1px solid #fff; }
+    #locs { display: flex; flex-wrap: wrap; gap: 6px; }
+    #locs button, #fit { background: #22375a; color: #fff; border: 1px solid #3d5c8c; border-radius: 6px; padding: 4px 9px; font-size: 0.76rem; font-weight: 600; cursor: pointer; }
+    #locs button.on { background: #1565c0; border-color: #90caf9; }
+    #when { margin-left: auto; font-size: 0.74rem; color: #b6c8de; text-align: right; white-space: nowrap; }
+    #msg { display: none; background: #b71c1c; color: #fff; padding: 7px 14px; font-size: 0.85rem; font-weight: 600; position: relative; z-index: 1000; }
+    #map { flex: 1; min-height: 0; background: #dfe5ec; }
+    .pin { display: flex; align-items: center; justify-content: center; min-width: 30px; height: 22px; padding: 0 5px; border-radius: 11px; border: 2px solid #fff; color: #fff; font: 700 12px/1 'Segoe UI', Arial, sans-serif; box-shadow: 0 1px 4px #0009; white-space: nowrap; }
+    .s-moving { background: #2e7d32; } .s-idle { background: #e65100; } .s-stop { background: #455a64; } .s-old { background: #9e9e9e; }
+    .leaflet-popup-content { color: #1a2535; font-size: 0.85rem; line-height: 1.4; margin: 10px 14px; }
+    .leaflet-popup-content b { font-size: 1rem; color: #0d2a5e; }
+    @media (max-width: 700px) { #when { margin-left: 0; width: 100%; text-align: left; } h1 { font-size: 0.95rem; } }
+  </style>
+</head>
+<body>
+  <div id="top">
+    <h1>Harrod Truck Map</h1>
+    <div id="counts"></div>
+    <div id="locs"></div>
+    <button id="fit" type="button">Show all</button>
+    <div id="when">Loading...</div>
+  </div>
+  <div id="msg"></div>
+  <div id="map"></div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+  // Live truck map for a kiosk. The secret key rides in the link (#key=...), never in this public file.
+  // The data comes from the app's Apps Script (doGet ?action=truckMap), which alone holds the Verizon login.
+  var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec';
+  var EVERY_MS = 60000;
+  var OLD_MS = 24 * 60 * 60 * 1000;   // no report for a day: greyed, so a parked truck is not read as live
+  var key = (location.hash.match(/key=([^&]+)/) || location.search.match(/key=([^&]+)/) || [])[1] || '';
+
+  var map = L.map('map', { zoomControl: true }).setView([38.1, -84.7], 9);
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
+  }).addTo(map);
+
+  var pins = {}, trucks = [], lastGood = 0, timer = null, loc = 'All', autoFit = true, fitting = false;
+
+  // The kiosk keeps every truck in view until someone moves the map; "Show all" goes back to that.
+  map.on('dragstart zoomstart', function () { if (!fitting) autoFit = false; });
+  window.addEventListener('resize', function () { map.invalidateSize(); if (autoFit) fit(); });
+  document.getElementById('fit').onclick = function () { autoFit = true; fit(); };
+
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+  function utc(iso) { return new Date(/(Z|[+-]\d\d:?\d\d)$/.test(iso) ? iso : iso + 'Z'); }   // Verizon's UTC time has no zone mark
+  function stateOf(t) {
+    if (t.upd && Date.now() - utc(t.upd).getTime() > OLD_MS) return 'old';
+    var s = (t.state || '').toLowerCase();
+    if (s.indexOf('mov') >= 0 || s.indexOf('driv') >= 0 || s.indexOf('tow') >= 0) return 'moving';   // Verizon also sends Towing
+    if (s.indexOf('idl') >= 0) return 'idle';
+    return 'stop';
+  }
+  var WORD = { moving: 'Moving', idle: 'Idling', stop: 'Stopped', old: 'No report in 24 hours' };
+  function shown() { return trucks.filter(function (t) { return loc === 'All' || t.loc === loc; }); }
+
+  function ago(iso) {
+    if (!iso) return 'unknown';
+    var d = utc(iso);
+    return isNaN(d) ? 'unknown' : d.toLocaleString([], { month: 'numeric', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+
+  function paint() {
+    var list = shown(), keep = {}, c = { moving: 0, idle: 0, stop: 0, old: 0 };
+    list.forEach(function (t) {
+      var st = stateOf(t); c[st]++; keep[t.n] = true;
+      var icon = L.divIcon({ className: '', html: '<div class="pin s-' + st + '">' + esc(t.n) + '</div>', iconSize: null, iconAnchor: [17, 11] });
+      var pop = '<b>Truck ' + esc(t.n) + '</b><br>' + esc(t.type) + (t.loc ? ' &middot; ' + esc(t.loc) : '') +
+                '<br>' + (/tow/i.test(t.state) ? 'Towing' : WORD[st]) + (st === 'moving' && t.head ? ' ' + esc(t.head) : '') +
+                '<br>' + esc(t.addr) + '<br>Last report ' + esc(ago(t.upd));
+      if (pins[t.n]) { pins[t.n].setLatLng([t.lat, t.lng]).setIcon(icon).setPopupContent(pop); }
+      else { pins[t.n] = L.marker([t.lat, t.lng], { icon: icon }).bindPopup(pop).addTo(map); }
+    });
+    Object.keys(pins).forEach(function (n) { if (!keep[n]) { map.removeLayer(pins[n]); delete pins[n]; } });
+    document.getElementById('counts').innerHTML =
+      chip('s-moving', c.moving, 'Moving') + chip('s-idle', c.idle, 'Idling') + chip('s-stop', c.stop + c.old, 'Stopped');
+    if (autoFit) fit();
+  }
+  function chip(cls, n, word) { return '<span class="chip"><span class="dot ' + cls + '"></span>' + n + ' ' + word + '</span>'; }
+
+  function fit() {
+    var list = shown();
+    if (!list.length) return;
+    fitting = true;
+    map.fitBounds(list.map(function (t) { return [t.lat, t.lng]; }), { padding: [30, 30], maxZoom: 14, animate: false });
+    fitting = false;
+  }
+
+  function paintLocs() {
+    var names = {}, box = document.getElementById('locs');
+    trucks.forEach(function (t) { if (t.loc) names[t.loc] = true; });
+    var all = ['All'].concat(Object.keys(names).sort());
+    box.innerHTML = '';
+    if (all.length < 3) return;
+    all.forEach(function (name) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.textContent = name; b.className = name === loc ? 'on' : '';
+      b.onclick = function () { loc = name; autoFit = true; paintLocs(); paint(); };
+      box.appendChild(b);
+    });
+  }
+
+  function say(text) {
+    var m = document.getElementById('msg');
+    m.textContent = text || ''; m.style.display = text ? 'block' : 'none';
+  }
+
+  function failed(text) {
+    // Pins stay on the map with the time they are from; a blank wall screen tells nobody anything.
+    say(lastGood ? text + ' Showing trucks from ' + new Date(lastGood).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '. Still trying.' : text + ' Still trying.');
+  }
+
+  function pull() {
+    if (document.hidden) return;   // nobody looking at this tab: no Verizon pull
+    fetch(GAS_URL + '?action=truckMap&key=' + encodeURIComponent(key))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.denied) { stop(); say('This link is not valid. Ask for the current truck map link.'); document.getElementById('when').textContent = ''; return; }
+        if (!d.success) { failed(d.message || 'Could not get truck locations.'); return; }
+        trucks = d.trucks || []; lastGood = Date.now();
+        say(d.partial ? 'Some trucks did not report this time.' : '');
+        paintLocs(); paint();
+        document.getElementById('when').textContent =
+          trucks.length + ' trucks on map' + ((d.noGps || []).length ? ' · ' + d.noGps.length + ' with no location right now' : '') +
+          ' · updated ' + new Date(d.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      })
+      .catch(function () { failed('Could not reach the server.'); });
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null; } }
+  function start() { stop(); pull(); timer = setInterval(pull, EVERY_MS); }
+
+  document.addEventListener('visibilitychange', function () { if (!document.hidden && timer) pull(); });
+
+  if (!key) { say('This link is not valid. Ask for the current truck map link.'); document.getElementById('when').textContent = ''; }
+  else start();
+  </script>
+</body>
+</html>
