@@ -40,11 +40,13 @@
   <div id="msg"></div>
   <div id="board"></div>
   <script>
-  // TV Bay View: the bottom half of the app's Bay View, for Frankfort, with no login. Read-only.
+  // TV Bay View: the bottom half of the app's Bay View, for one shop (?loc=Lexington, else Frankfort), with no login. Read-only.
   // The secret key rides in the link (#key=...), never in this public file. The data comes from doGet ?action=bayBoard.
   var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec';
   var EVERY_MS = 60000;
   var key = (location.hash.match(/key=([^&]+)/) || location.search.match(/key=([^&]+)/) || [])[1] || '';
+  var shop = (location.search.match(/[?&]loc=([A-Za-z]+)/) || [])[1] || 'Frankfort';   // Frankfort or Lexington from the link
+  document.querySelector('h1').textContent = shop + ' Bays'; document.title = 'Harrod ' + shop + ' Bays';
   var MS_COLORS = { 'Assigned': '#1565c0', 'In Progress': '#2e7d32', 'Awaiting Foreman Review': '#ad1457', 'Waiting on Parts': '#c24a00', 'Mechanic Complete': '#6a1b9a' };
   var board = document.getElementById('board'), lastGood = 0, timer = null, last = null;
 
@@ -74,7 +76,7 @@
 
   function paint(d) {
     var bays = d.bays || [];
-    if (!bays.length) { board.style.gridTemplateColumns = '1fr'; board.innerHTML = '<div class="bay"><div class="empty">No bays set up for Frankfort.</div></div>'; return; }
+    if (!bays.length) { board.style.gridTemplateColumns = '1fr'; board.innerHTML = '<div class="bay"><div class="empty">No bays set up for ' + esc(shop) + '.</div></div>'; return; }
     board.style.gridTemplateColumns = 'repeat(' + bays.length + ', minmax(0, 1fr))';
     board.innerHTML = bays.map(function (b) {
       var mechs = (b.mechanics || []).map(function (m) {
@@ -110,7 +112,7 @@
   }
   function pull() {
     if (document.hidden) return;
-    fetch(GAS_URL + '?action=bayBoard&key=' + encodeURIComponent(key))
+    fetch(GAS_URL + '?action=bayBoard&location=' + encodeURIComponent(shop) + '&key=' + encodeURIComponent(key))
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (d.denied) { if (timer) clearInterval(timer); say('This link is not valid. Ask for the current link.'); document.getElementById('when').textContent = ''; return; }

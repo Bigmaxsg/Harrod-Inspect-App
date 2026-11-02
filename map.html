@@ -50,6 +50,9 @@
   var OLD_MS = 24 * 60 * 60 * 1000;   // no report for a day: greyed, so a parked truck is not read as live
   var key = (location.hash.match(/key=([^&]+)/) || location.search.match(/key=([^&]+)/) || [])[1] || '';
 
+  var shop = (location.search.match(/[?&]loc=([A-Za-z]+)/) || [])[1] || '';   // Frankfort or Lexington from the link
+  if (shop) { document.querySelector('h1').textContent = shop + ' Truck Map'; document.title = 'Harrod ' + shop + ' Truck Map'; }
+
   var map = L.map('map', { zoomControl: true }).setView([38.1, -84.7], 9);
   L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19, attribution: '&copy; OpenStreetMap contributors'
@@ -72,7 +75,13 @@
     return 'stop';
   }
   var WORD = { moving: 'Moving', idle: 'Idling', stop: 'Stopped', old: 'No report in 24 hours' };
-  function shown() { return trucks.filter(function (t) { return loc === 'All' || t.loc === loc; }); }
+  // A link locked to one shop. Vehicles not in the app have no location; today all of them are at Frankfort, so they go there.
+  function inShop(t) {
+    if (!shop) return true;
+    if (!t.loc) return shop === 'Frankfort';
+    return t.loc.toLowerCase().indexOf(shop.toLowerCase()) === 0;
+  }
+  function shown() { return trucks.filter(function (t) { return inShop(t) && (loc === 'All' || t.loc === loc); }); }
 
   function ago(iso) {
     if (!iso) return 'unknown';
@@ -111,7 +120,7 @@
     trucks.forEach(function (t) { if (t.loc) names[t.loc] = true; });
     var all = ['All'].concat(Object.keys(names).sort());
     box.innerHTML = '';
-    if (all.length < 3) return;
+    if (shop || all.length < 3) return;
     all.forEach(function (name) {
       var b = document.createElement('button');
       b.type = 'button'; b.textContent = name; b.className = name === loc ? 'on' : '';
@@ -141,7 +150,7 @@
         say(d.partial ? 'Some trucks did not report this time.' : '');
         paintLocs(); paint();
         document.getElementById('when').textContent =
-          trucks.length + ' trucks on map' + ((d.noGps || []).length ? ' · ' + d.noGps.length + ' with no location right now' : '') +
+          shown().length + ' trucks on map' + ((!shop && (d.noGps || []).length) ? ' · ' + d.noGps.length + ' with no location right now' : '') +
           ' · updated ' + new Date(d.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
       })
       .catch(function () { failed('Could not reach the server.'); });
