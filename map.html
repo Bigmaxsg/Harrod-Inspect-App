@@ -5,7 +5,8 @@
   <title>Harrod Truck Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
-  <meta name="referrer" content="no-referrer">
+  <!-- OpenStreetMap refuses map images sent with no referrer. "origin" sends only the site name; the #key never leaves the browser this way. -->
+  <meta name="referrer" content="origin">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
