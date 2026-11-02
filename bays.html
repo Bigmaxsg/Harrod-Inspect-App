@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Harrod Frankfort Bays</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; background: #0e1a2e; color: #f0f4f8; display: flex; flex-direction: column; overflow: hidden; }
+    #top { background: #14233b; border-bottom: 2px solid #2a4a7f; padding: 8px 14px; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; }
+    h1 { font-size: 1.05rem; font-weight: 700; color: #fff; white-space: nowrap; }
+    #when { margin-left: auto; font-size: 0.74rem; color: #b6c8de; white-space: nowrap; }
+    #msg { display: none; background: #b71c1c; color: #fff; padding: 7px 14px; font-size: 0.85rem; font-weight: 600; }
+    #board { flex: 1; min-height: 0; display: grid; gap: 10px; padding: 10px; font-size: var(--fs, 16px); }
+    .bay { background: #fff; color: #222; border-radius: 10px; padding: 0.7em; min-width: 0; min-height: 0; overflow: hidden; }
+    .bay h2 { font-size: 1.25em; font-weight: 800; color: #0058a8; padding-bottom: 0.3em; margin-bottom: 0.4em; border-bottom: 2px solid #e3f2fd; }
+    .mechs { display: flex; flex-wrap: wrap; gap: 0.3em 0.7em; margin-bottom: 0.6em; }
+    .mech { display: flex; align-items: center; gap: 0.3em; font-size: 0.88em; font-weight: 600; color: #333; }
+    .av { width: 1.6em; height: 1.6em; border-radius: 50%; background: #e3f2fd; color: #1565c0; font-weight: 800; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .none { font-size: 0.85em; color: #666; font-style: italic; margin-bottom: 0.6em; }
+    .empty { font-size: 0.9em; color: #666; font-style: italic; text-align: center; padding: 0.8em 0; }
+    .card { border: 2px solid #1565c0; border-radius: 8px; padding: 0.5em 0.65em; margin-bottom: 0.5em; background: #fff; }
+    .card.done { background: #f1f1f1; }
+    .k-PM { background: #e3f2fd; } .k-Annual { background: #e0f2f1; }
+    .row { display: flex; justify-content: space-between; align-items: center; gap: 0.4em; }
+    .truck { font-size: 1.2em; font-weight: 800; color: #111; }
+    .truck small { font-size: 0.68em; font-weight: 400; color: #555; }
+    .id { font-size: 0.74em; font-weight: 800; white-space: nowrap; }
+    .pills { display: flex; flex-wrap: wrap; gap: 0.25em; margin: 0.3em 0; }
+    .pill { font-size: 0.72em; font-weight: 700; padding: 0.1em 0.6em; border-radius: 1em; color: #fff; background: #555; white-space: nowrap; }
+    .desc { font-size: 0.88em; color: #333; line-height: 1.3; }
+    .note { font-size: 0.78em; background: #f1f8ff; border-left: 3px solid #90caf9; padding: 0.2em 0.45em; margin-top: 0.3em; color: #333; line-height: 1.3; }
+    .note b { color: #1565c0; }
+  </style>
+</head>
+<body>
+  <div id="top"><h1>Frankfort Bays</h1><div id="when">Loading...</div></div>
+  <div id="msg"></div>
+  <div id="board"></div>
+  <script>
+  // TV Bay View: the bottom half of the app's Bay View, for Frankfort, with no login. Read-only.
+  // The secret key rides in the link (#key=...), never in this public file. The data comes from doGet ?action=bayBoard.
+  var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec';
+  var EVERY_MS = 60000;
+  var key = (location.hash.match(/key=([^&]+)/) || location.search.match(/key=([^&]+)/) || [])[1] || '';
+  var MS_COLORS = { 'Assigned': '#1565c0', 'In Progress': '#2e7d32', 'Awaiting Foreman Review': '#ad1457', 'Waiting on Parts': '#c24a00', 'Mechanic Complete': '#6a1b9a' };
+  var board = document.getElementById('board'), lastGood = 0, timer = null, last = null;
+
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+  // Same aging colour as the app's _woAgingColor: blue when fresh, red once past the bay days.
+  function ageColor(o, days) {
+    if (o.parts || o.mech === 'Mechanic Complete') return '#1565c0';
+    var t = Math.min(1, Math.max(0, (Date.now() - (new Date(o.updated || o.opened).getTime() || 0)) / 86400000 / days));
+    return 'rgb(' + Math.round(21 + t * 177) + ',' + Math.round(101 - t * 61) + ',' + Math.round(192 - t * 152) + ')';
+  }
+
+  function cardHtml(o, days) {
+    var c = ageColor(o, days), pills = '';
+    if (o.redTag) pills += '<span class="pill" style="background:#b71c1c;">Red Tag</span>';
+    if (o.kind) pills += '<span class="pill" style="background:#00695c;">' + esc(o.kind) + '</span>';
+    if (o.parts) pills += '<span class="pill" style="background:' + (o.partsHere ? '#2e7d32' : '#c24a00') + ';">' + (o.partsHere ? 'Parts Are Here' : 'Parts Ordered') + '</span>';
+    if (o.mech) pills += '<span class="pill" style="background:' + (MS_COLORS[o.mech] || '#555') + ';">' + esc(o.mech) + '</span>';
+    return '<div class="card' + (o.mech === 'Mechanic Complete' ? ' done' : '') + (o.kind ? ' k-' + esc(o.kind) : '') + '" style="border-color:' + c + ';">'
+      + '<div class="row"><span class="truck">#' + esc(o.truck) + (o.type ? ' <small>' + esc(o.type) + '</small>' : '') + '</span>'
+      + '<span class="id" style="color:' + c + ';">' + esc(o.id) + '</span></div>'
+      + (pills ? '<div class="pills">' + pills + '</div>' : '')
+      + '<div class="desc">' + esc(o.desc) + '</div>'
+      + (o.note ? '<div class="note"><b>' + esc(o.note.by) + ':</b> ' + esc(o.note.text) + '</div>' : '')
+      + '</div>';
+  }
+
+  function paint(d) {
+    var bays = d.bays || [];
+    if (!bays.length) { board.style.gridTemplateColumns = '1fr'; board.innerHTML = '<div class="bay"><div class="empty">No bays set up for Frankfort.</div></div>'; return; }
+    board.style.gridTemplateColumns = 'repeat(' + bays.length + ', minmax(0, 1fr))';
+    board.innerHTML = bays.map(function (b) {
+      var mechs = (b.mechanics || []).map(function (m) {
+        return '<span class="mech"><span class="av">' + esc(m.charAt(0)) + '</span>' + esc(m) + '</span>';
+      }).join('');
+      // Cards sort like the app: unfinished first, oldest first.
+      var list = (b.orders || []).slice().sort(function (x, y) {
+        var dx = x.mech === 'Mechanic Complete' ? 1 : 0, dy = y.mech === 'Mechanic Complete' ? 1 : 0;
+        return (dx - dy) || ((new Date(x.opened).getTime() || 0) - (new Date(y.opened).getTime() || 0));
+      });
+      return '<div class="bay"><h2>' + esc(b.name) + '</h2>'
+        + (mechs ? '<div class="mechs">' + mechs + '</div>' : '<div class="none">No mechanics assigned</div>')
+        + (list.length ? list.map(function (o) { return cardHtml(o, d.bayDays || 7); }).join('') : '<div class="empty">No work orders</div>')
+        + '</div>';
+    }).join('');
+    shrinkToFit();
+  }
+
+  // Nobody can scroll a TV: everything shrinks together until the fullest bay fits.
+  function shrinkToFit() {
+    var size = Math.max(14, Math.min(24, window.innerWidth / 80));
+    do {
+      board.style.setProperty('--fs', size + 'px');
+      var over = Array.prototype.some.call(board.children, function (b) { return b.scrollHeight > b.clientHeight + 1; });
+      size -= 0.5;
+    } while (over && size >= 8);
+  }
+  window.addEventListener('resize', function () { if (last) shrinkToFit(); });
+
+  function say(t) { var m = document.getElementById('msg'); m.textContent = t || ''; m.style.display = t ? 'block' : 'none'; }
+  function failed(t) {
+    say(lastGood ? t + ' Showing bays from ' + new Date(lastGood).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '. Still trying.' : t + ' Still trying.');
+  }
+  function pull() {
+    if (document.hidden) return;
+    fetch(GAS_URL + '?action=bayBoard&key=' + encodeURIComponent(key))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.denied) { if (timer) clearInterval(timer); say('This link is not valid. Ask for the current link.'); document.getElementById('when').textContent = ''; return; }
+        if (!d.success) { failed(d.message || 'Could not get the bays.'); return; }
+        last = d; lastGood = Date.now(); say(''); paint(d);
+        document.getElementById('when').textContent = 'updated ' + new Date(d.at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      })
+      .catch(function () { failed('Could not reach the server.'); });
+  }
+  if (!key) { say('This link is not valid. Ask for the current link.'); document.getElementById('when').textContent = ''; }
+  else { pull(); timer = setInterval(pull, EVERY_MS); }
+  </script>
+</body>
+</html>
