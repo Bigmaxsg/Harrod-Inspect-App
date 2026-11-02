@@ -10,6 +10,8 @@
     iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; visibility: hidden; background: #0e1a2e; }
     iframe.on { visibility: visible; }
     #msg { padding: 40px; font-size: 1.2rem; }
+    #count { position: fixed; top: 6px; right: 8px; z-index: 10; min-width: 54px; padding: 5px 10px; border-radius: 8px; background: #1565c0; border: 2px solid #fff; color: #fff; font-size: 1.15rem; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; }
+    #count.soon { background: #b71c1c; }
   </style>
 </head>
 <body>
@@ -32,13 +34,38 @@
       document.body.appendChild(f);
       return f;
     });
-    var at = 0;
+    // Max: a countdown top right so people know when the page is about to switch. It sits over each page's own top bar,
+    // so that bar gets room on its right, or the countdown would cover "updated" and Fleet Live View's Refresh.
+    frames.forEach(function (f) {
+      f.addEventListener('load', function () {
+        try {
+          var d = f.contentDocument, bar = d.getElementById('top') || d.getElementById('top-bar');
+          if (bar) bar.style.paddingRight = '90px';
+        } catch (e) {}
+      });
+    });
+    var count = document.createElement('div');
+    count.id = 'count';
+    document.body.appendChild(count);
+
+    // One clock for both, so the number can never disagree with the switch.
+    var at = 0, left = SECONDS;
     frames[0].className = 'on';
+    function showCount() {
+      count.textContent = left;
+      count.className = left <= 5 ? 'soon' : '';
+    }
+    showCount();
     setInterval(function () {
-      frames[at].className = '';
-      at = (at + 1) % frames.length;
-      frames[at].className = 'on';
-    }, SECONDS * 1000);
+      left--;
+      if (left <= 0) {
+        frames[at].className = '';
+        at = (at + 1) % frames.length;
+        frames[at].className = 'on';
+        left = SECONDS;
+      }
+      showCount();
+    }, 1000);
     setTimeout(function () { location.reload(); }, RELOAD_HOURS * 3600 * 1000);
   }
   </script>
