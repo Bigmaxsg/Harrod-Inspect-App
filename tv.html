@@ -33,9 +33,11 @@
 
   if (!key) {
     document.body.innerHTML = '<div id="msg">This link is not valid. Ask for the current TV link.</div>';
-  } else if (!display) {
-    legacy();
   } else {
+    // Max: the first TV link (no ?d=) follows the Harrod TV display 'frankfort' (or 'lexington' with ?loc=Lexington)
+    // once it has been saved in the app; until then, and if GitHub cannot be read, it is the old fixed rotation.
+    var isDefault = !display;
+    if (isDefault) display = /[?&]loc=lexington/i.test(location.search) ? 'lexington' : 'frankfort';
     dashboard();
   }
   setTimeout(function () { location.reload(); }, RELOAD_HOURS * 3600 * 1000);
@@ -100,7 +102,7 @@
   // are on screen and stop when they go off.
   function dashboard() {
     var LIST_EVERY_MS = 3 * 60 * 1000, PRELOAD_S = 8;
-    var cfg = null, list = [], at = -1, left = 0, cur = null, next = null, nextFor = null;
+    var fellBack = false, cfg = null, list = [], at = -1, left = 0, cur = null, next = null, nextFor = null;
     var count = makeCount();
     var idle = document.createElement('div');
     idle.id = 'idle';
@@ -117,6 +119,7 @@
       fetch('tv/' + display + '.json?t=' + Date.now(), { cache: 'no-store' })
         .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
         .then(function (c) {
+          if (fellBack) { location.reload(); return; }
           var first = !cfg, changed = !cfg || c.updated !== cfg.updated;
           cfg = c;
           try { localStorage.setItem('tv-' + display, JSON.stringify(c)); } catch (e) {}
@@ -124,7 +127,18 @@
           else if (changed) { dropAll(); start(); }   // an edit: start over with the new list
         })
         .catch(function () {
-          if (!cfg) document.body.innerHTML = '<div id="msg">This display was not found. Check the link in Harrod TV in the app.</div>';
+          if (cfg || fellBack) return;
+          if (isDefault) {
+            // the old link before its display is saved: run the old rotation, and start over once the display appears
+            fellBack = true;
+            count.parentNode.removeChild(count); idle.parentNode.removeChild(idle);
+            legacy();
+            setInterval(function () {
+              fetch('tv/' + display + '.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { if (r.ok) location.reload(); }).catch(function () {});
+            }, LIST_EVERY_MS);
+            return;
+          }
+          document.body.innerHTML = '<div id="msg">This display was not found. Check the link in Harrod TV in the app.</div>';
         });
     }
 
