@@ -24,12 +24,13 @@
     #msg { display: none; background: #b71c1c; color: #fff; padding: 7px 14px; font-size: 0.85rem; font-weight: 600; position: relative; z-index: 1000; }
     #map { flex: 1; min-height: 0; background: #dfe5ec; }
     .pin { display: flex; align-items: center; justify-content: center; min-width: 30px; height: 22px; padding: 0 5px; border-radius: 11px; border: 2px solid #fff; color: #fff; font: 700 12px/1 'Segoe UI', Arial, sans-serif; box-shadow: 0 1px 4px #0009; white-space: nowrap; }
-    /* Max: a little arrow like their other tracker, showing which way a moving or towed truck is headed. */
-    .pw { position: relative; }
-    .arr { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; pointer-events: none; }
-    /* Max's truck pictures sit above the number tag, flipped to face the way the truck is headed (east = right). */
-    .pic { position: absolute; left: 50%; bottom: calc(100% + 1px); height: 20px; pointer-events: none; filter: drop-shadow(0 1px 2px #0008); }
-    .pic.w { transform: translateX(-50%) scaleX(-1); } .pic.e { transform: translateX(-50%); }
+    /* Max: the truck picture sits ON the truck's spot, flipped to face the way it is headed (east = right); the number tag
+       sits above it, and a moving truck has a little arrow in front of it like their other tracker. */
+    .pw { position: relative; display: inline-block; }
+    .pic { display: block; height: 20px; filter: drop-shadow(0 1px 2px #0008); }
+    .pic.w { transform: scaleX(-1); }
+    .pw .pin { position: absolute; left: 50%; bottom: calc(100% + 1px); transform: translateX(-50%); min-width: 24px; height: 18px; padding: 0 4px; font-size: 11px; border-radius: 9px; }
+    .arr { position: absolute; top: 50%; width: 14px; height: 14px; pointer-events: none; }
     .arr svg { display: block; width: 14px; height: 14px; filter: drop-shadow(0 0 1px #000) drop-shadow(0 1px 2px #0009); }
     .s-moving { background: #2e7d32; } .s-idle { background: #e65100; } .s-stop { background: #455a64; } .s-old { background: #9e9e9e; }
     .leaflet-popup-content { color: #1a2535; font-size: 0.85rem; line-height: 1.4; margin: 10px 14px; }
@@ -83,22 +84,25 @@
   }
   // Verizon gives only 8 compass words (or Unknown), not an exact angle.
   var DEG = { 'north': 0, 'north east': 45, 'east': 90, 'south east': 135, 'south': 180, 'south west': 225, 'west': 270, 'north west': 315 };
-  // Arrow sits just outside the number tag on the side it points to; the tag's width is guessed from the number's length.
+  function headDeg(t) { return DEG[String(t.head || '').toLowerCase().replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim()]; }
+  function westBound(t) { var d = headDeg(t); return d != null && Math.sin(d * Math.PI / 180) < -0.1; }   // North, South or Unknown face right
+  // Arrow sits in front of the truck picture (the side it faces), turned to the exact one of 8 directions.
   function arrowHtml(t) {
-    var d = DEG[String(t.head || '').toLowerCase().replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim()];
+    var d = headDeg(t);
     if (d == null) return '';
-    var r = d * Math.PI / 180, halfW = Math.max(15, String(t.n).length * 3.6 + 7);
-    var dx = Math.round((Math.sin(r) < -0.1 ? -1 : 1) * (halfW + 9)), dy = 0;
-    return '<div class="arr" style="transform:translate(-50%,-50%) translate(' + dx + 'px,' + dy + 'px) rotate(' + d + 'deg);">'
+    return '<div class="arr" style="' + (westBound(t) ? 'right' : 'left') + ':calc(100% + 2px);transform:translateY(-50%) rotate(' + d + 'deg);">'
       + '<svg viewBox="0 0 14 14"><path d="M7 0 L14 13 L7 9 L0 13 Z" fill="#c6ff00" stroke="#33691e" stroke-width="1"/></svg></div>';
   }
   // Max's pictures (wrapper img/, all drawn facing right). Anything else -- vehicles not in the app -- gets a plain pickup.
   var PICKUP = 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 26 17"><g fill="#455a64" stroke="#fff" stroke-width="0.8"><path d="M0.5 6 H10.5 V10.5 H0.5 Z"/><path d="M10.5 10.5 V3.5 H16.5 L19.5 6.5 H23.5 V10.5 Z"/><circle cx="5" cy="12.3" r="2.3"/><circle cx="19" cy="12.3" r="2.3"/></g></svg>');
+  // [src, width at 20px tall] -- the width centres the picture on the truck's spot before the image has loaded.
+  function picOf(t) {
+    var ty = String(t.type || '');
+    return /mixer/i.test(ty) ? ['img/mixer.png', 58] : /dump/i.test(ty) ? ['img/dump.png', 43] : /tractor|tanker/i.test(ty) ? ['img/tanker.png', 77] : [PICKUP, 31];
+  }
   function picHtml(t) {
-    var ty = String(t.type || ''), src = /mixer/i.test(ty) ? 'img/mixer.png' : /dump/i.test(ty) ? 'img/dump.png' : /tractor|tanker/i.test(ty) ? 'img/tanker.png' : PICKUP;
-    var d = DEG[String(t.head || '').toLowerCase().replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim()];
-    var west = d != null && Math.sin(d * Math.PI / 180) < -0.1;   // North, South or Unknown keep facing right
-    return '<img class="pic ' + (west ? 'w' : 'e') + '" src="' + src + '" alt="">';
+    var p = picOf(t);
+    return '<img class="pic' + (westBound(t) ? ' w' : '') + '" src="' + p[0] + '" width="' + p[1] + '" height="20" alt="">';
   }
   var WORD = { moving: 'Moving', idle: 'Idling', stop: 'Stopped', old: 'No report in 24 hours' };
   // A link locked to one shop. Vehicles not in the app have no location; today all of them are at Frankfort, so they go there.
@@ -119,7 +123,7 @@
     var list = shown(), keep = {}, c = { moving: 0, idle: 0, stop: 0, old: 0 };
     list.forEach(function (t) {
       var st = stateOf(t); c[st]++; keep[t.n] = true;
-      var icon = L.divIcon({ className: '', html: '<div class="pw"><div class="pin s-' + st + '">' + esc(t.n) + '</div>' + picHtml(t) + (st === 'moving' ? arrowHtml(t) : '') + '</div>', iconSize: null, iconAnchor: [17, 11] });
+      var icon = L.divIcon({ className: '', html: '<div class="pw">' + picHtml(t) + '<div class="pin s-' + st + '">' + esc(t.n) + '</div>' + (st === 'moving' ? arrowHtml(t) : '') + '</div>', iconSize: null, iconAnchor: [Math.round(picOf(t)[1] / 2), 10] });
       var pop = '<b>Truck ' + esc(t.n) + '</b><br>' + esc(t.type) + (t.loc ? ' &middot; ' + esc(t.loc) : '') +
                 '<br>' + (/tow/i.test(t.state) ? 'Towing' : WORD[st]) + (st === 'moving' && t.head ? ' ' + esc(t.head) : '') +
                 '<br>' + esc(t.addr) + '<br>Last report ' + esc(ago(t.upd));
