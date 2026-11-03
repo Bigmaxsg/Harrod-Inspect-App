@@ -926,6 +926,19 @@
     if (numWrap) Array.prototype.forEach.call(numWrap.children, function(el){ numNeedW = Math.max(numNeedW, Math.ceil(el.scrollWidth)); });
     if (numWrap) numWrap.style.minWidth = numNeedW + 'px';
     if (thumb) { thumb.style.width = thumb.style.height = '16px'; }
+    // Max (2026-11-03): on the TV the Not In Use cards are ~128px wide and the 44px driver photo left the name ~47px
+    // ("Raym..."). When the name does not fit, the photo shrinks and the name wraps to two lines (first / last).
+    // Done before the height fit below, so a taller driver row is counted and lower lines drop instead.
+    var dAv = card.querySelector('.driver-mini-avatar'), dNm = card.querySelector('.driver-name-text');
+    if (dAv) { dAv.style.width = dAv.style.height = ''; dAv.style.fontSize = ''; }
+    if (dNm) { dNm.style.whiteSpace = dNm.style.display = dNm.style.webkitLineClamp = dNm.style.webkitBoxOrient = dNm.style.overflowWrap = ''; }
+    if (dAv && dNm && dNm.scrollWidth > dNm.clientWidth + 1) {
+      var avPx = Math.max(24, Math.min(_sp.driverAv, Math.round(innerW * 0.22)));
+      dAv.style.width = dAv.style.height = avPx + 'px';
+      dAv.style.fontSize = Math.max(10, Math.round(avPx * 0.38)) + 'px';
+      dNm.style.whiteSpace = 'normal'; dNm.style.overflowWrap = 'break-word';
+      dNm.style.display = '-webkit-box'; dNm.style.webkitBoxOrient = 'vertical'; dNm.style.webkitLineClamp = '2';
+    }
     var numH = numWrap ? numWrap.offsetHeight : 0;
     // Beside the number the photo gets at most half the card and never squeezes the number;
     // under the number it gets the full width but only the height left below it.
