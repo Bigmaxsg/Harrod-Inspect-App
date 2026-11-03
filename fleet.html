@@ -991,7 +991,9 @@
     }
     var f = fit(), i = 0;
     // Lowest line goes first until the photo can be a usable size (or the number alone fits).
-    while ((thumb ? f.size < THUMB_MIN : f.room < numH) && i < CARD_DROP_ORDER.length) {
+    // The number row is never shorter than the number itself, so a photo that fits beside it still needs room >= numH
+    // (2026-11-03: the top row was 41px with a 36px photo, and the bottom 6px of the card were cut).
+    while ((thumb ? (f.size < THUMB_MIN || f.room < numH) : f.room < numH) && i < CARD_DROP_ORDER.length) {
       var victims = card.querySelectorAll(':scope > ' + CARD_DROP_ORDER[i++] + ':not(.fv-drop)');
       if (!victims.length) continue;
       Array.prototype.forEach.call(victims, function(el){ el.classList.add('fv-drop'); });
