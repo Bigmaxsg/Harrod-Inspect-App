@@ -5,6 +5,7 @@
   <title>Harrod TV</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="origin">
   <style>
     html, body { height: 100%; margin: 0; background: #0e1a2e; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; color: #fff; }
     iframe { position: fixed; inset: 0; width: 100%; height: 100%; border: 0; visibility: hidden; background: #0e1a2e; }
@@ -12,52 +13,71 @@
     #msg { padding: 40px; font-size: 1.2rem; }
     #count { position: fixed; top: 6px; right: 8px; z-index: 10; min-width: 54px; padding: 5px 10px; border-radius: 8px; background: #1565c0; border: 2px solid #fff; color: #fff; font-size: 1.15rem; font-weight: 800; text-align: center; font-variant-numeric: tabular-nums; }
     #count.soon { background: #b71c1c; }
+    /* Harrod TV dashboard slides (?d=...). One layer per slide; only the one on screen is visible. */
+    .layer { position: fixed; inset: 0; visibility: hidden; overflow: hidden; background: #0e1a2e; }
+    .layer.on { visibility: visible; }
+    .layer iframe { position: absolute; visibility: visible; background: #fff; }
+    .layer .box { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); overflow: hidden; border-radius: 1vh; }
+    .layer img.pic { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .layer .txt { position: absolute; left: 4vw; right: 4vw; line-height: 1.15; font-weight: 800; white-space: pre-wrap; word-wrap: break-word; }
+    .layer .txt span { display: inline-block; padding: 0.15em 0.4em; border-radius: 0.25em; }
+    #idle { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; color: #8fa6c8; }
+    #idle .clock { font-size: 14vh; font-weight: 300; color: #dfe8f5; font-variant-numeric: tabular-nums; }
   </style>
 </head>
 <body>
   <script>
-  // The one address the TV opens. Max: GPS 45 seconds, Fleet Live View for Frankfort 45 seconds, Bay View 45 seconds.
-  // All three stay loaded and keep updating behind each other, so a swap is instant. visibility (not display:none) keeps
-  // the map's size correct. To add a screen or change the time: edit SCREENS / SECONDS here; the TV picks it up at its
-  // next reload below.
-  var SECONDS = 45;
-  var RELOAD_HOURS = 6;   // a browser left on for weeks slowly uses more memory; a reload also brings in page updates
   var key = (location.hash.match(/key=([^&]+)/) || location.search.match(/key=([^&]+)/) || [])[1] || '';
-  // Max: each shop gets its own TV. Frankfort is .../tv#key=..., Lexington is .../tv?loc=Lexington#key=...
-  var shop = /[?&]loc=lexington/i.test(location.search) ? 'Lexington' : 'Frankfort';
-  var SCREENS = ['map?loc=' + shop + '#key=' + key, 'fleet?location=' + shop + '&auto=1', 'bays?loc=' + shop + '#key=' + key];
+  var display = (location.search.match(/[?&]d=([a-z0-9-]+)/i) || [])[1] || '';
+  var RELOAD_HOURS = 6;   // a browser left on for weeks slowly uses more memory; a reload also brings in page updates
 
   if (!key) {
     document.body.innerHTML = '<div id="msg">This link is not valid. Ask for the current TV link.</div>';
+  } else if (!display) {
+    legacy();
   } else {
+    dashboard();
+  }
+  setTimeout(function () { location.reload(); }, RELOAD_HOURS * 3600 * 1000);
+
+  function makeCount() {
+    var c = document.createElement('div');
+    c.id = 'count';
+    document.body.appendChild(c);
+    return c;
+  }
+  function showCount(c, left) {
+    c.textContent = left;
+    c.className = left <= 5 ? 'soon' : '';
+  }
+  // Max: a countdown top right so people know when the page is about to switch. It sits over each page's own top bar,
+  // so that bar gets room on its right, or the countdown would cover "updated" and Fleet Live View's Refresh.
+  function makeRoom(f) {
+    f.addEventListener('load', function () {
+      try {
+        var d = f.contentDocument, bar = d.getElementById('top') || d.getElementById('top-bar');
+        if (bar) bar.style.paddingRight = '90px';
+      } catch (e) {}
+    });
+  }
+
+  // ---------------------------------------------------------------------------------------------------------------
+  // The first TV link (no ?d=): map, Fleet Live View, Bay View, 45 seconds each. Kept exactly as it was so a Pi already
+  // pointed at .../tv#key=... keeps working. Frankfort is .../tv#key=..., Lexington is .../tv?loc=Lexington#key=...
+  function legacy() {
+    var SECONDS = 45;
+    var shop = /[?&]loc=lexington/i.test(location.search) ? 'Lexington' : 'Frankfort';
+    var SCREENS = ['map?loc=' + shop + '#key=' + key, 'fleet?location=' + shop + '&auto=1', 'bays?loc=' + shop + '#key=' + key];
     var frames = SCREENS.map(function (src) {
       var f = document.createElement('iframe');
       f.src = src;
       document.body.appendChild(f);
+      makeRoom(f);
       return f;
     });
-    // Max: a countdown top right so people know when the page is about to switch. It sits over each page's own top bar,
-    // so that bar gets room on its right, or the countdown would cover "updated" and Fleet Live View's Refresh.
-    frames.forEach(function (f) {
-      f.addEventListener('load', function () {
-        try {
-          var d = f.contentDocument, bar = d.getElementById('top') || d.getElementById('top-bar');
-          if (bar) bar.style.paddingRight = '90px';
-        } catch (e) {}
-      });
-    });
-    var count = document.createElement('div');
-    count.id = 'count';
-    document.body.appendChild(count);
-
-    // One clock for both, so the number can never disagree with the switch.
-    var at = 0, left = SECONDS;
+    var count = makeCount(), at = 0, left = SECONDS;
     frames[0].className = 'on';
-    function showCount() {
-      count.textContent = left;
-      count.className = left <= 5 ? 'soon' : '';
-    }
-    showCount();
+    showCount(count, left);
     setInterval(function () {
       left--;
       if (left <= 0) {
@@ -66,9 +86,186 @@
         frames[at].className = 'on';
         left = SECONDS;
       }
-      showCount();
+      showCount(count, left);
     }, 1000);
-    setTimeout(function () { location.reload(); }, RELOAD_HOURS * 3600 * 1000);
+  }
+
+  // ---------------------------------------------------------------------------------------------------------------
+  // Harrod TV dashboard display (.../tv?d=<display id>#key=...). The slide list is set up in the app (Harrod TV, master
+  // admin) and saved HERE on GitHub as tv/<id>.json, so reading it costs the app nothing. Each TV re-reads it every few
+  // minutes, so an edit shows up by itself.
+  //
+  // Max: hidden slides must not keep asking the app for data. So only the slide on screen is loaded, plus the next one
+  // a few seconds early so the switch is instant; every other slide is thrown away. The map / Bay View pull while they
+  // are on screen and stop when they go off.
+  function dashboard() {
+    var LIST_EVERY_MS = 3 * 60 * 1000, PRELOAD_S = 8;
+    var cfg = null, list = [], at = -1, left = 0, cur = null, next = null, nextFor = null;
+    var count = makeCount();
+    var idle = document.createElement('div');
+    idle.id = 'idle';
+    idle.innerHTML = '<div class="clock"></div><div class="nm"></div>';
+    document.body.appendChild(idle);
+
+    try { cfg = JSON.parse(localStorage.getItem('tv-' + display) || 'null'); } catch (e) {}
+    pullList();
+    setInterval(pullList, LIST_EVERY_MS);
+    setInterval(tick, 1000);
+    if (cfg) start();
+
+    function pullList() {
+      fetch('tv/' + display + '.json?t=' + Date.now(), { cache: 'no-store' })
+        .then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+        .then(function (c) {
+          var first = !cfg, changed = !cfg || c.updated !== cfg.updated;
+          cfg = c;
+          try { localStorage.setItem('tv-' + display, JSON.stringify(c)); } catch (e) {}
+          if (first) start();
+          else if (changed) { dropAll(); start(); }   // an edit: start over with the new list
+        })
+        .catch(function () {
+          if (!cfg) document.body.innerHTML = '<div id="msg">This display was not found. Check the link in Harrod TV in the app.</div>';
+        });
+    }
+
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function today() { var d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function nowHM() { var d = new Date(); return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+    // Max: the TVs stop asking the app after hours. Quiet from..to may cross midnight (19:00 -> 05:00).
+    function quietNow() {
+      var q = cfg && cfg.quiet;
+      if (!q || !q.from || !q.to || q.from === q.to) return false;
+      var t = nowHM();
+      return q.from < q.to ? (t >= q.from && t < q.to) : (t >= q.from || t < q.to);
+    }
+    function usesApp(s) { return s.type === 'map' || s.type === 'fleet' || s.type === 'bays'; }
+    function live() {
+      var d = today(), quiet = quietNow();
+      return (cfg.slides || []).filter(function (s) {
+        if (s.show === false) return false;
+        if (s.from && d < s.from) return false;
+        if (s.to && d > s.to) return false;
+        if (quiet && usesApp(s)) return false;
+        return true;
+      });
+    }
+    function secs(s) { return Math.max(5, Math.min(3600, parseInt(s.seconds, 10) || 45)); }
+
+    function start() {
+      list = live();
+      at = -1;
+      advance();
+    }
+    function advance() {
+      var fresh = live(), was = cur && cur.slide;
+      // the list can change with the clock (a date window opens, quiet hours start); keep our place by slide id
+      if (JSON.stringify(fresh.map(function (s) { return s.id; })) !== JSON.stringify(list.map(function (s) { return s.id; }))) {
+        var i = was ? fresh.map(function (s) { return s.id; }).indexOf(was.id) : -1;
+        list = fresh;
+        at = i;
+      }
+      if (!list.length) { dropAll(); showIdle(true); return; }
+      showIdle(false);
+      at = (at + 1) % list.length;
+      var s = list[at];
+      if (cur && cur.slide.id === s.id && list.length === 1) { left = secs(s); return; }   // one slide: just stay on it
+      var layer = (next && nextFor === s.id) ? next : build(s);
+      next = null; nextFor = null;
+      layer.classList.add('on');
+      if (cur && cur !== layer) remove(cur);
+      cur = layer;
+      left = secs(s);
+      showCount(count, left);
+      count.style.display = list.length > 1 && cfg.countdown !== false ? '' : 'none';
+    }
+    function tick() {
+      if (!cfg) return;
+      if (!list.length || !cur) {
+        if (idle.style.display === 'flex') {
+          idle.querySelector('.clock').textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+          if (live().length) start();
+        }
+        return;
+      }
+      left--;
+      if (left === PRELOAD_S && list.length > 1) {
+        var n = list[(at + 1) % list.length];
+        if (n.id !== cur.slide.id) { if (next) remove(next); next = build(n); nextFor = n.id; }
+      }
+      if (left <= 0) advance();
+      else showCount(count, left);
+    }
+    function showIdle(on) {
+      idle.style.display = on ? 'flex' : 'none';
+      count.style.display = 'none';
+      if (on) {
+        idle.querySelector('.nm').textContent = cfg.name || '';
+        idle.querySelector('.clock').textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      }
+    }
+    function remove(l) { try { var f = l.querySelector('iframe'); if (f) f.src = 'about:blank'; } catch (e) {} if (l.parentNode) l.parentNode.removeChild(l); }
+    function dropAll() { if (cur) remove(cur); if (next) remove(next); cur = null; next = null; nextFor = null; }
+
+    function srcOf(s) {
+      var shop = s.shop === 'Lexington' ? 'Lexington' : 'Frankfort';
+      if (s.type === 'map') return 'map?loc=' + shop + '#key=' + key;
+      if (s.type === 'fleet') return 'fleet?location=' + shop + '&auto=1';
+      if (s.type === 'bays') return 'bays?loc=' + shop + '#key=' + key;
+      return s.url || 'about:blank';
+    }
+    function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function safeColor(c, dflt) { return /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : dflt; }
+
+    // One slide on screen. fit: 'full' = whole screen, 'fit' = whole picture shown (bars at the sides if needed),
+    // 'box' = a smaller centered box, box% of the screen.
+    function build(s) {
+      var l = document.createElement('div');
+      l.className = 'layer';
+      l.slide = s;
+      l.style.background = safeColor(s.bg, '#0e1a2e');
+      var fit = s.fit || 'full', holder = l;
+      if (fit === 'box') {
+        var pct = Math.max(30, Math.min(100, parseInt(s.box, 10) || 80));
+        holder = document.createElement('div');
+        holder.className = 'box';
+        holder.style.width = pct + '%';
+        holder.style.height = pct + '%';
+        l.appendChild(holder);
+      }
+      if (s.type === 'image' && s.img) {
+        var im = document.createElement('img');
+        im.className = 'pic';
+        im.src = s.img;
+        im.alt = '';
+        im.style.objectFit = fit === 'full' ? 'cover' : 'contain';
+        holder.appendChild(im);
+      } else if (s.type !== 'image' && s.type !== 'text') {
+        var f = document.createElement('iframe');
+        f.style.inset = '0'; f.style.width = '100%'; f.style.height = '100%';
+        f.setAttribute('allow', 'autoplay; fullscreen');
+        if (usesApp(s)) makeRoom(f);
+        f.src = srcOf(s);
+        holder.appendChild(f);
+      }
+      (s.texts || []).forEach(function (t) {
+        if (!t || !String(t.t || '').trim()) return;
+        var d = document.createElement('div');
+        d.className = 'txt';
+        var size = Math.max(2, Math.min(30, parseFloat(t.size) || 8));
+        d.style.fontSize = size + 'vh';
+        d.style.textAlign = t.align === 'left' || t.align === 'right' ? t.align : 'center';
+        d.style.color = safeColor(t.color, '#ffffff');
+        if (t.pos === 'top') d.style.top = '6vh';
+        else if (t.pos === 'bottom') d.style.bottom = '6vh';
+        else { d.style.top = '50%'; d.style.transform = 'translateY(-50%)'; }
+        var bc = safeColor(t.bandColor, '#000000');
+        if (t.band) d.innerHTML = '<span style="background:' + (bc.length === 7 ? bc + 'cc' : bc) + '">' + esc(t.t) + '</span>';
+        else { d.textContent = t.t; d.style.textShadow = '0 0.04em 0.12em rgba(0,0,0,0.85)'; }
+        l.appendChild(d);
+      });
+      document.body.appendChild(l);
+      return l;
+    }
   }
   </script>
 </body>
