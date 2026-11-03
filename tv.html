@@ -217,7 +217,7 @@
         idle.querySelector('.clock').textContent = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
       }
     }
-    function remove(l) { try { var f = l.querySelector('iframe'); if (f) f.src = 'about:blank'; } catch (e) {} if (l.parentNode) l.parentNode.removeChild(l); }
+    function remove(l) { try { Array.prototype.forEach.call(l.querySelectorAll('iframe'), function (f) { f.src = 'about:blank'; }); } catch (e) {} if (l.parentNode) l.parentNode.removeChild(l); }
     function dropAll() { if (cur) remove(cur); if (next) remove(next); cur = null; next = null; nextFor = null; }
 
     function srcOf(s) {
@@ -228,6 +228,7 @@
       return s.url || 'about:blank';
     }
     function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function num(v) { v = parseFloat(v); return isNaN(v) ? 0 : Math.max(0, Math.min(100, v)); }
     function safeColor(c, dflt) { return /^#[0-9a-f]{3,8}$/i.test(c || '') ? c : dflt; }
 
     // One slide on screen. fit: 'full' = whole screen, 'fit' = whole picture shown (bars at the sides if needed),
@@ -246,7 +247,50 @@
         holder.style.height = pct + '%';
         l.appendChild(holder);
       }
-      if (s.type === 'image' && s.img) {
+      if (s.type === 'layout') {
+        // a background picture plus items placed anywhere (x / y / w / h in % of the screen), later items on top.
+        // After hours the truck map / Fleet Live View / Bay View items are left out (quiet hours).
+        if (s.bgImg) {
+          var bi = document.createElement('img');
+          bi.className = 'pic'; bi.src = s.bgImg; bi.alt = '';
+          bi.style.objectFit = s.bgFit === 'contain' ? 'contain' : 'cover';
+          l.appendChild(bi);
+        }
+        var quiet = quietNow();
+        (s.els || []).forEach(function (e) {
+          if (quiet && usesApp({ type: e.kind })) return;
+          var b = document.createElement('div');
+          b.style.cssText = 'position:absolute;overflow:hidden;left:' + num(e.x) + '%;top:' + num(e.y) + '%;width:' + num(e.w) + '%;height:' + num(e.h) + '%;';
+          if (e.kind === 'image') {
+            if (!e.img) return;
+            var pi = document.createElement('img');
+            pi.className = 'pic'; pi.src = e.img; pi.alt = '';
+            pi.style.objectFit = e.fit === 'cover' ? 'cover' : 'contain';
+            b.appendChild(pi);
+          } else if (e.kind === 'text') {
+            var al = e.align === 'left' || e.align === 'right' ? e.align : 'center';
+            b.style.display = 'flex'; b.style.alignItems = 'center';
+            b.style.justifyContent = al === 'left' ? 'flex-start' : al === 'right' ? 'flex-end' : 'center';
+            b.style.textAlign = al; b.style.fontWeight = '800'; b.style.lineHeight = '1.15';
+            b.style.whiteSpace = 'pre-wrap'; b.style.wordWrap = 'break-word';
+            b.style.fontSize = Math.max(2, Math.min(30, parseFloat(e.size) || 7)) + 'vh';
+            b.style.color = safeColor(e.color, '#ffffff');
+            var ebc = safeColor(e.bandColor, '#000000');
+            if (e.band) b.innerHTML = '<span style="display:inline-block;padding:0.15em 0.4em;border-radius:0.25em;background:' + (ebc.length === 7 ? ebc + 'cc' : ebc) + '">' + esc(e.t) + '</span>';
+            else { b.textContent = e.t || ''; b.style.textShadow = '0 0.04em 0.12em rgba(0,0,0,0.85)'; }
+          } else {
+            var src = srcOf({ type: e.kind, shop: e.shop, url: e.url });
+            if (src === 'about:blank') return;
+            var z = Math.max(25, Math.min(100, parseInt(e.zoom, 10) || 100)) / 100;
+            var fr = document.createElement('iframe');
+            fr.setAttribute('allow', 'autoplay; fullscreen');
+            fr.style.cssText = 'position:absolute;left:0;top:0;border:0;background:#fff;visibility:visible;width:' + (100 / z) + '%;height:' + (100 / z) + '%;transform:scale(' + z + ');transform-origin:0 0;';
+            fr.src = src;
+            b.appendChild(fr);
+          }
+          l.appendChild(b);
+        });
+      } else if (s.type === 'image' && s.img) {
         var im = document.createElement('img');
         im.className = 'pic';
         im.src = s.img;
