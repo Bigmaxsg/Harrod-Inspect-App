@@ -153,7 +153,11 @@
 }
     .card-num { font-size: var(--card-num-size); font-weight: var(--card-num-weight); font-style: var(--card-num-style); color: var(--card-num-color); line-height: 1; }
     .card-type-chip { font-size: var(--card-chip-size); font-weight: var(--card-chip-weight); padding: 2px 5px; border-radius: 7px; background: var(--card-chip-bg); color: var(--card-chip-color); flex-shrink: 0; white-space: nowrap; }
-    .card-make { font-size: var(--card-make-size); font-weight: var(--card-make-weight); font-style: var(--card-make-style); color: var(--card-make-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; position: relative; z-index: 1; }
+    .card-make { font-size: var(--card-make-size); font-weight: var(--card-make-weight); font-style: var(--card-make-style); color: var(--card-make-color); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.25; position: relative; z-index: 1; }
+    /* Max (2026-11-03) "still losing the year and make": a card is a fixed-height flex column, and a line with
+       overflow:hidden (the make line) was squeezed to ~5px instead of the card dropping a lower line. No line may
+       shrink; _fitCardContent decides what is dropped when it does not all fit. */
+    .truck-card > * { flex-shrink: 0; }
     .card-status { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px; border-radius: 12px; font-size: 0.73rem; font-weight: 700; width: fit-content; }
     .card-status .dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
     .s-green  { background: #e8f5e9; color: #2e7d32; } .s-green .dot  { background: #43a047; }
@@ -925,7 +929,7 @@
   var THUMB_MIN = 28;
   var CARD_DROP_ORDER = ['.click-hint', '.card-admin-update', '.card-last-trip', '.card-defect-ok',
     '.card-defect-warn', '.card-redtag-reason', '.card-elapsed', '.card-pretrip-time',
-    '.card-make', '.card-driver-row'];   // Max (2026-11-03): the driver's name matters more than the year/make line
+    '.card-make', '.card-driver-row'];   // Max (2026-11-03): the driver's name, then the year/make line, are the last to go
   function _fitCardContent(card, cardW, cardH) {
     Array.prototype.forEach.call(card.querySelectorAll('.fv-drop'), function(el){ el.classList.remove('fv-drop'); });
     var thumb = card.querySelector('.card-front-thumb');
