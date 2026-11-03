@@ -867,10 +867,16 @@
     // both draw the same capped card, and the first one found won: an extra row with empty
     // room on the right (Max, 2026-10-01). Scored against the slider shape, so 185x230 beats
     // 190x209 for a 190x230 setting. On a tie, more columns / fewer rows wins.
+    // Max (2026-11-03): "the cards have to show the truck numbers too no matter what" -- a squeezed section
+    // (dragged narrow, or many trucks) used more, thinner columns until "#258" was cut to "#2". A column count
+    // whose card is narrower than the widest number (+ card padding/border) is never picked; more rows instead.
+    var NUM_MIN_W = 0;
+    cards.forEach(function(cd) { var nm = cd.querySelector('.card-num'); if (nm) { nm.style.fontSize = ''; NUM_MIN_W = Math.max(NUM_MIN_W, Math.ceil(nm.scrollWidth) + 26); } });
     var bestCols = 1, bestMin = 0;
     for (var c = 1; c <= N; c++) {
       var r = Math.ceil(N / c);
       var w = Math.min((availW - GAP * (c - 1)) / c, _sp.cardMaxW);
+      if (c > 1 && w < NUM_MIN_W) break;   // only gets thinner from here
       var h = Math.min((availH - GAP * (r - 1)) / r, _sp.cardMaxH);
       if (w <= 0 || h <= 0) continue;
       // How close the card gets to the Max Width x Max Height the sliders ask for (1 = full size).
@@ -957,6 +963,15 @@
       var beside = besideW > 0 ? Math.min(_sp.truckThumb, besideW, room) : 0;
       var under  = Math.min(_sp.truckThumb, innerW, room - numH - TOPGAP);
       return beside >= under ? { size: beside, stacked: false, room: room } : { size: under, stacked: true, room: room };
+    }
+    var cardNum = card.querySelector('.card-num');
+    if (cardNum) {
+      cardNum.style.fontSize = '';
+      var numFits = innerW - 2;
+      if (cardNum.scrollWidth > numFits) {
+        cardNum.style.fontSize = Math.max(9, Math.floor(parseFloat(getComputedStyle(cardNum).fontSize) * numFits / cardNum.scrollWidth)) + 'px';
+        if (numWrap) { numNeedW = Math.ceil(cardNum.scrollWidth); numWrap.style.minWidth = numNeedW + 'px'; numH = numWrap.offsetHeight; }
+      }
     }
     var f = fit(), i = 0;
     // Lowest line goes first until the photo can be a usable size (or the number alone fits).
