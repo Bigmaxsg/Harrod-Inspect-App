@@ -25,7 +25,7 @@
   var key = (location.hash.match(/key=([^&]+)/) || location.search.match(/key=([^&]+)/) || [])[1] || '';
   // Max: each shop gets its own TV. Frankfort is .../tv#key=..., Lexington is .../tv?loc=Lexington#key=...
   var shop = /[?&]loc=lexington/i.test(location.search) ? 'Lexington' : 'Frankfort';
-  var SCREENS = ['map?loc=' + shop + '#key=' + key, 'fleet?location=' + shop, 'bays?loc=' + shop + '#key=' + key];
+  var SCREENS = ['map?loc=' + shop + '#key=' + key, 'fleet?location=' + shop + '&auto=1', 'bays?loc=' + shop + '#key=' + key];
 
   if (!key) {
     document.body.innerHTML = '<div id="msg">This link is not valid. Ask for the current TV link.</div>';

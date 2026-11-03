@@ -428,6 +428,7 @@
   var _params      = new URLSearchParams(window.location.search);
   var _lockedLoc   = (_params.get('location') || '').trim();
   var _lockedType  = (_params.get('type')     || '').trim();
+  var _AUTO_SECTIONS = _params.get('auto') === '1';
   // ── Appearance Settings ─────────────────────────────────────────────────
   var SP_DEFAULTS = {
     cardMaxH:180, cardMaxW:158, truckThumb:84, driverAv:44,
@@ -451,6 +452,9 @@
     // secInUse/secIdle/secRed/secFollow on 2026-10-01; drop them so they are not saved again.
     ['inUseMult','idleMult','redMult','inUseMinFr','idleMinFr','redMinFr'].forEach(function(k){ delete _sp[k]; });
     _secNormalize();
+    // Max (2026-11-03): on the Harrod TV (tv.html adds &auto=1) nobody drags the edges, so the sections follow the
+    // truck counts almost entirely (90%, the most _secNormalize allows) and nothing is saved over this browser's layout.
+    if (_AUTO_SECTIONS) _sp.secFollow = 90;
   }
 
   // ── Section widths ──────────────────────────────────────────────────────
@@ -560,6 +564,7 @@
   window.addEventListener('pointerup', _secDragEnd);
   window.addEventListener('pointercancel', _secDragEnd);
   function spSave() {
+    if (_AUTO_SECTIONS) return;
     try { localStorage.setItem('fleet-appearance', JSON.stringify(_sp)); } catch(e) {}
   }
   function spApplyCss() {
