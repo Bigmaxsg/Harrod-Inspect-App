@@ -24,6 +24,10 @@
     #msg { display: none; background: #b71c1c; color: #fff; padding: 7px 14px; font-size: 0.85rem; font-weight: 600; position: relative; z-index: 1000; }
     #map { flex: 1; min-height: 0; background: #dfe5ec; }
     .pin { display: flex; align-items: center; justify-content: center; min-width: 30px; height: 22px; padding: 0 5px; border-radius: 11px; border: 2px solid #fff; color: #fff; font: 700 12px/1 'Segoe UI', Arial, sans-serif; box-shadow: 0 1px 4px #0009; white-space: nowrap; }
+    /* Max: a little arrow like their other tracker, showing which way a moving or towed truck is headed. */
+    .pw { position: relative; }
+    .arr { position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; pointer-events: none; }
+    .arr svg { display: block; width: 14px; height: 14px; filter: drop-shadow(0 0 1px #000) drop-shadow(0 1px 2px #0009); }
     .s-moving { background: #2e7d32; } .s-idle { background: #e65100; } .s-stop { background: #455a64; } .s-old { background: #9e9e9e; }
     .leaflet-popup-content { color: #1a2535; font-size: 0.85rem; line-height: 1.4; margin: 10px 14px; }
     .leaflet-popup-content b { font-size: 1rem; color: #0d2a5e; }
@@ -74,6 +78,17 @@
     if (s.indexOf('idl') >= 0) return 'idle';
     return 'stop';
   }
+  // Verizon gives only 8 compass words (or Unknown), not an exact angle.
+  var DEG = { 'north': 0, 'north east': 45, 'east': 90, 'south east': 135, 'south': 180, 'south west': 225, 'west': 270, 'north west': 315 };
+  // Arrow sits just outside the number tag on the side it points to; the tag's width is guessed from the number's length.
+  function arrowHtml(t) {
+    var d = DEG[String(t.head || '').toLowerCase().replace(/[^a-z ]/g, '').replace(/\s+/g, ' ').trim()];
+    if (d == null) return '';
+    var r = d * Math.PI / 180, halfW = Math.max(15, String(t.n).length * 3.6 + 7);
+    var dx = Math.round(Math.sin(r) * (halfW + 7)), dy = Math.round(-Math.cos(r) * 19);
+    return '<div class="arr" style="transform:translate(-50%,-50%) translate(' + dx + 'px,' + dy + 'px) rotate(' + d + 'deg);">'
+      + '<svg viewBox="0 0 14 14"><path d="M7 0 L14 13 L7 9 L0 13 Z" fill="#c6ff00" stroke="#33691e" stroke-width="1"/></svg></div>';
+  }
   var WORD = { moving: 'Moving', idle: 'Idling', stop: 'Stopped', old: 'No report in 24 hours' };
   // A link locked to one shop. Vehicles not in the app have no location; today all of them are at Frankfort, so they go there.
   function inShop(t) {
@@ -93,7 +108,7 @@
     var list = shown(), keep = {}, c = { moving: 0, idle: 0, stop: 0, old: 0 };
     list.forEach(function (t) {
       var st = stateOf(t); c[st]++; keep[t.n] = true;
-      var icon = L.divIcon({ className: '', html: '<div class="pin s-' + st + '">' + esc(t.n) + '</div>', iconSize: null, iconAnchor: [17, 11] });
+      var icon = L.divIcon({ className: '', html: '<div class="pw"><div class="pin s-' + st + '">' + esc(t.n) + '</div>' + (st === 'moving' ? arrowHtml(t) : '') + '</div>', iconSize: null, iconAnchor: [17, 11] });
       var pop = '<b>Truck ' + esc(t.n) + '</b><br>' + esc(t.type) + (t.loc ? ' &middot; ' + esc(t.loc) : '') +
                 '<br>' + (/tow/i.test(t.state) ? 'Towing' : WORD[st]) + (st === 'moving' && t.head ? ' ' + esc(t.head) : '') +
                 '<br>' + esc(t.addr) + '<br>Last report ' + esc(ago(t.upd));
