@@ -297,7 +297,6 @@
          it; on an installed PWA there is no browser chrome, so without this the fleet board
          is a dead end (Max, 2026-09-11). -->
     <a class="back-btn" href="#" onclick="backToApp(event)">← Back to App</a>
-    <button id="settings-btn" onclick="openSettings()">⚙ Appearance</button>
     <div id="refresh-info">
       <span id="last-updated">Loading...</span>
       <span id="next-refresh"></span>
@@ -445,7 +444,9 @@
   var _sp = Object.assign({}, SP_DEFAULTS);
 
   function spLoad() {
-    try { var s = localStorage.getItem('fleet-appearance'); if (s) _sp = Object.assign({}, SP_DEFAULTS, JSON.parse(s)); } catch(e) {}
+    // Max (2026-11-03) removed the Appearance button: saved looks from it are ignored (defaults), only the
+    // section split -- still set by dragging the section edges -- is kept.
+    try { var s = localStorage.getItem('fleet-appearance'); if (s) { var sv = JSON.parse(s); ['secInUse','secIdle','secRed','secFollow'].forEach(function(k){ if (sv[k] != null) _sp[k] = sv[k]; }); } } catch(e) {}
     // The old "Section Column Ratios" keys (weight x truck count, min fr) were replaced by
     // secInUse/secIdle/secRed/secFollow on 2026-10-01; drop them so they are not saved again.
     ['inUseMult','idleMult','redMult','inUseMinFr','idleMinFr','redMinFr'].forEach(function(k){ delete _sp[k]; });
@@ -853,7 +854,7 @@
     gridEl.style.gridTemplateColumns = '';
     gridEl.style.gridTemplateRows = '';
     gridEl.style.overflowY = '';
-    cards.forEach(function(c) { c.style.width = ''; c.style.height = ''; c.style.overflow = ''; c.classList.remove('card-compact'); });
+    cards.forEach(function(c) { c.style.width = ''; c.style.height = ''; c.style.overflow = ''; c.style.scale = ''; c.classList.remove('card-compact'); });
     // (photo size and dropped lines are reset per card in _fitCardContent)
     if (!N) return;
 
@@ -862,35 +863,39 @@
     var availH = gridEl.clientHeight - PAD * 2;
     if (availW < 20 || availH < 20) return;
 
-    // Score each column count by the card it would REALLY draw -- capped at the Max Width /
-    // Max Height sliders. Scoring the uncapped cell made 4 and 5 columns look different when
-    // both draw the same capped card, and the first one found won: an extra row with empty
-    // room on the right (Max, 2026-10-01). Scored against the slider shape, so 185x230 beats
-    // 190x209 for a 190x230 setting. On a tie, more columns / fewer rows wins.
-    // Max (2026-11-03): "the cards have to show the truck numbers too no matter what" -- a squeezed section
-    // (dragged narrow, or many trucks) used more, thinner columns until "#258" was cut to "#2". A column count
-    // whose card is narrower than the widest number (+ card padding/border) is never picked; more rows instead.
+    // Max (2026-11-03): "make all or almost all elements dynamically size change so they all fit on the cards and
+    // don't cover each other up ... if i had more real estate i would see more". Cards used to stop at the Max Width /
+    // Max Height sliders (158 x 180), so a filtered or big screen left empty space while lines were still cut.
+    // Now every card is laid out at a design size (BASE_W x BASE_H, everything on it showing) and the WHOLE card is
+    // scaled (CSS `scale`, so hover's translate still works) to fill the cell: bigger screen = bigger card, crowded
+    // section = everything shrinks together. Only below MIN_SCALE (too small to read) does _fitCardContent start
+    // dropping lines, as before. The column count is the one giving the biggest scale.
+    // Max (2026-11-03): "the cards have to show the truck numbers too no matter what" -- a column count whose card
+    // (in design units) is narrower than the widest number (+ card padding/border) is never picked; more rows instead.
+    var BASE_W = 158, BASE_H = 210, MIN_SCALE = 0.72, MAX_SCALE = 2.6;
     var NUM_MIN_W = 0;
     cards.forEach(function(cd) { var nm = cd.querySelector('.card-num'); if (nm) { nm.style.fontSize = ''; NUM_MIN_W = Math.max(NUM_MIN_W, Math.ceil(nm.scrollWidth) + 26); } });
+    function scaleFor(w, h) { return Math.max(MIN_SCALE, Math.min(MAX_SCALE, w / BASE_W, h / BASE_H)); }
     var bestCols = 1, bestMin = 0;
     for (var c = 1; c <= N; c++) {
       var r = Math.ceil(N / c);
-      var w = Math.min((availW - GAP * (c - 1)) / c, _sp.cardMaxW);
-      if (c > 1 && w < NUM_MIN_W) break;   // only gets thinner from here
-      var h = Math.min((availH - GAP * (r - 1)) / r, _sp.cardMaxH);
+      var w = (availW - GAP * (c - 1)) / c;
+      var h = (availH - GAP * (r - 1)) / r;
       if (w <= 0 || h <= 0) continue;
-      // How close the card gets to the Max Width x Max Height the sliders ask for (1 = full size).
-      var m = Math.min(w / _sp.cardMaxW, h / _sp.cardMaxH);
+      if (c > 1 && w / scaleFor(w, h) < NUM_MIN_W) break;   // only gets thinner from here
+      var m = Math.min(w / BASE_W, h / BASE_H);
       if (m >= bestMin - 0.002) { if (m > bestMin) bestMin = m; bestCols = c; }
     }
 
     var rows  = Math.ceil(N / bestCols);
     var cardW = Math.floor((availW - GAP * (bestCols - 1)) / bestCols);
     var cardH = Math.floor((availH - GAP * (rows    - 1)) / rows);
-    var MAX_W = _sp.cardMaxW, MAX_H = _sp.cardMaxH;
-    cardW = Math.min(cardW, MAX_W);
-    cardH = Math.min(cardH, MAX_H);
-    var compact = cardH < 65;
+    // Keep a card card-shaped: one truck in a tall empty column is not stretched into a strip.
+    cardH = Math.min(cardH, Math.floor(cardW * BASE_H / BASE_W * 1.25));
+    cardW = Math.min(cardW, Math.floor(cardH * BASE_W / BASE_H * 1.6));
+    var s = scaleFor(cardW, cardH);
+    var innerCW = cardW / s, innerCH = cardH / s;   // the card's size in design units
+    var compact = innerCH < 65;
 
     gridEl.style.gridTemplateColumns = 'repeat(' + bestCols + ', ' + cardW + 'px)';
     gridEl.style.gridTemplateRows    = 'repeat(' + rows    + ', ' + cardH + 'px)';
@@ -898,11 +903,13 @@
     gridEl.style.alignContent = 'start';
 
     cards.forEach(function(card) {
-      card.style.width    = cardW + 'px';
-      card.style.height   = cardH + 'px';
+      card.style.width    = innerCW + 'px';
+      card.style.height   = innerCH + 'px';
       card.style.overflow = 'hidden';
+      card.style.transformOrigin = '0 0';
+      card.style.scale = String(s);
       card.classList.toggle('card-compact', compact);
-      _fitCardContent(card, cardW, cardH);
+      _fitCardContent(card, innerCW, innerCH);
     });
   }
 
