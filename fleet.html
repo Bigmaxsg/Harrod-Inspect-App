@@ -907,7 +907,7 @@
   var THUMB_MIN = 28;
   var CARD_DROP_ORDER = ['.click-hint', '.card-admin-update', '.card-last-trip', '.card-defect-ok',
     '.card-defect-warn', '.card-redtag-reason', '.card-elapsed', '.card-pretrip-time',
-    '.card-driver-row', '.card-make'];
+    '.card-make', '.card-driver-row'];   // Max (2026-11-03): the driver's name matters more than the year/make line
   function _fitCardContent(card, cardW, cardH) {
     Array.prototype.forEach.call(card.querySelectorAll('.fv-drop'), function(el){ el.classList.remove('fv-drop'); });
     var thumb = card.querySelector('.card-front-thumb');
