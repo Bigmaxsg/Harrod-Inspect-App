@@ -255,6 +255,15 @@
       return s.url || 'about:blank';
     }
     function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function vidEl(src, fit) {
+      var v = document.createElement('video');
+      v.src = src; v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+      v.setAttribute('muted', ''); v.setAttribute('playsinline', '');
+      v.className = 'pic'; v.style.objectFit = fit;
+      var go = function () { try { var p = v.play(); if (p && p.catch) p.catch(function () {}); } catch (e) {} };
+      v.addEventListener('canplay', go);
+      return v;
+    }
     function hex6(c) { return /^#[0-9a-f]{6}$/i.test(c || '') ? c.slice(1) : ''; }
     function widgetSrc(e) {
       var c = hex6(e.color) || 'ffffff', p = hex6(e.panel);
@@ -311,6 +320,9 @@
             var ebc = safeColor(e.bandColor, '#000000');
             if (e.band) b.innerHTML = '<span style="display:inline-block;padding:0.15em 0.4em;border-radius:0.25em;background:' + (ebc.length === 7 ? ebc + 'cc' : ebc) + '">' + esc(e.t) + '</span>';
             else { b.textContent = e.t || ''; b.style.textShadow = '0 0.04em 0.12em rgba(0,0,0,0.85)'; }
+          } else if (e.kind === 'video') {
+            if (!e.vid) return;
+            b.appendChild(vidEl(e.vid, e.fit === 'cover' ? 'cover' : 'contain'));
           } else if (e.kind === 'clock' || e.kind === 'weather') {
             // our own clock.html / weather.html, see-through so the background shows behind them
             var wf = document.createElement('iframe');
@@ -330,6 +342,9 @@
           }
           l.appendChild(b);
         });
+      } else if (s.type === 'video') {
+        // Max's uploaded clip (tv/vid/): plays with no sound, on a loop, while the slide is on
+        if (s.vid) holder.appendChild(vidEl(s.vid, fit === 'full' ? 'cover' : 'contain'));
       } else if (s.type === 'image' && s.img) {
         var im = document.createElement('img');
         im.className = 'pic';
