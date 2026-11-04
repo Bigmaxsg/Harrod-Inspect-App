@@ -27,11 +27,13 @@
     /* Max: the truck picture sits ON the truck's spot, flipped to face the way it is headed (east = right); the number tag
        sits above it, and a moving truck has a little arrow in front of it like their other tracker. */
     .pw { position: relative; display: inline-block; }
-    .pic { display: block; height: 20px; filter: drop-shadow(0 1px 2px #0008); }
+    /* --k: marker size (screen size x the display's Truck size setting, see SIZE below) */
+    :root { --k: 1; }
+    .pic { display: block; height: calc(20px * var(--k)); filter: drop-shadow(0 1px 2px #0008); }
     .pic.w { transform: scaleX(-1); }
-    .pw .pin { position: absolute; left: 50%; bottom: calc(100% + 1px); transform: translateX(-50%); min-width: 24px; height: 18px; padding: 0 4px; font-size: 11px; border-radius: 9px; }
-    .arr { position: absolute; top: 50%; width: 14px; height: 14px; pointer-events: none; }
-    .arr svg { display: block; width: 14px; height: 14px; filter: drop-shadow(0 0 1px #000) drop-shadow(0 1px 2px #0009); }
+    .pw .pin { position: absolute; left: 50%; bottom: calc(100% + 1px); transform: translateX(-50%); min-width: calc(24px * var(--k)); height: calc(18px * var(--k)); padding: 0 calc(4px * var(--k)); font-size: calc(11px * var(--k)); border-radius: calc(9px * var(--k)); }
+    .arr { position: absolute; top: 50%; width: calc(14px * var(--k)); height: calc(14px * var(--k)); pointer-events: none; }
+    .arr svg { display: block; width: 100%; height: 100%; filter: drop-shadow(0 0 1px #000) drop-shadow(0 1px 2px #0009); }
     .s-moving { background: #2e7d32; } .s-idle { background: #e65100; } .s-stop { background: #455a64; } .s-old { background: #9e9e9e; }
     .leaflet-popup-content { color: #1a2535; font-size: 0.85rem; line-height: 1.4; margin: 10px 14px; }
     .leaflet-popup-content b { font-size: 1rem; color: #0d2a5e; }
@@ -70,7 +72,17 @@
 
   // The kiosk keeps every truck in view until someone moves the map; "Show all" goes back to that.
   map.on('dragstart zoomstart', function () { if (!fitting) autoFit = false; });
-  window.addEventListener('resize', function () { map.invalidateSize(); if (autoFit) fit(); });
+  // Marker size: a bigger screen gets bigger trucks (normal monitor = as before, up to double on a big TV), times the
+  // display's own Truck size setting (?sz=50-250, Harrod TV). Re-worked out when the window changes size.
+  var SIZE = Math.max(50, Math.min(250, parseInt((location.search.match(/[?&]sz=(\d+)/) || [])[1], 10) || 100)) / 100, K = 1;
+  function sizeK() {
+    var k = Math.max(1, Math.min(2, innerHeight / 900)) * SIZE;
+    if (Math.abs(k - K) < 0.01) return false;
+    K = k; document.documentElement.style.setProperty('--k', K.toFixed(3));
+    return true;
+  }
+  sizeK();
+  window.addEventListener('resize', function () { map.invalidateSize(); if (sizeK() && trucks.length) paint(); else if (autoFit) fit(); });
   document.getElementById('fit').onclick = function () { autoFit = true; fit(); };
 
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
@@ -105,7 +117,7 @@
   }
   function picHtml(t) {
     var p = picOf(t);
-    return '<img class="pic' + (westBound(t) ? ' w' : '') + '" src="' + p[0] + '" width="' + p[1] + '" height="20" alt="">';
+    return '<img class="pic' + (westBound(t) ? ' w' : '') + '" src="' + p[0] + '" width="' + Math.round(p[1] * K) + '" height="' + Math.round(20 * K) + '" alt="">';
   }
   var WORD = { moving: 'Moving', idle: 'Idling', stop: 'Stopped', old: 'No report in 24 hours' };
   // A link locked to one shop. Vehicles not in the app have no location; today all of them are at Frankfort, so they go there.
@@ -126,7 +138,7 @@
     var list = shown(), keep = {}, c = { moving: 0, idle: 0, stop: 0, old: 0 };
     list.forEach(function (t) {
       var st = stateOf(t); c[st]++; keep[t.n] = true;
-      var icon = L.divIcon({ className: '', html: '<div class="pw">' + picHtml(t) + '<div class="pin s-' + st + '">' + esc(t.n) + '</div>' + (st === 'moving' ? arrowHtml(t) : '') + '</div>', iconSize: null, iconAnchor: [Math.round(picOf(t)[1] / 2), 10] });
+      var icon = L.divIcon({ className: '', html: '<div class="pw">' + picHtml(t) + '<div class="pin s-' + st + '">' + esc(t.n) + '</div>' + (st === 'moving' ? arrowHtml(t) : '') + '</div>', iconSize: null, iconAnchor: [Math.round(picOf(t)[1] * K / 2), Math.round(10 * K)] });
       var pop = '<b>Truck ' + esc(t.n) + '</b><br>' + esc(t.type) + (t.loc ? ' &middot; ' + esc(t.loc) : '') +
                 '<br>' + (/tow/i.test(t.state) ? 'Towing' : WORD[st]) + (st === 'moving' && t.head ? ' ' + esc(t.head) : '') +
                 '<br>' + esc(t.addr) + '<br>Last report ' + esc(ago(t.upd));

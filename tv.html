@@ -232,8 +232,9 @@
 
     function srcOf(s) {
       var shop = s.shop === 'Lexington' ? 'Lexington' : 'Frankfort';
-      if (s.type === 'map') return 'map' + (s.shop === 'All' ? '' : '?loc=' + shop) + '#key=' + key;   // All = whole fleet (no loc)
-      if (s.type === 'fleet') return 'fleet?location=' + shop + '&auto=1';
+      // Truck size (sz, %) and Fleet Live View truck types come from Harrod TV (the app's _htvLiveSrc builds the same)
+      if (s.type === 'map') return 'map?sz=' + (parseInt(s.tsize, 10) || 100) + (s.shop === 'All' ? '' : '&loc=' + shop) + '#key=' + key;   // All = whole fleet (no loc)
+      if (s.type === 'fleet') return 'fleet?location=' + shop + '&auto=1' + (s.types && s.types.length ? '&type=' + encodeURIComponent(s.types.join(',')) : '');
       if (s.type === 'bays') return 'bays?loc=' + shop + '#key=' + key;
       if (s.type === 'radar') {
         // RainViewer plays the radar loop by itself (oAP=1); same address as the app's _htvRadarSrc
@@ -313,7 +314,7 @@
             wf.src = widgetSrc(e);
             b.appendChild(wf);
           } else {
-            var src = srcOf({ type: e.kind, shop: e.shop, url: e.url, lat: e.lat, lon: e.lon, wzoom: e.wzoom, layer: e.layer });
+            var src = srcOf({ type: e.kind, shop: e.shop, url: e.url, lat: e.lat, lon: e.lon, wzoom: e.wzoom, layer: e.layer, tsize: e.tsize, types: e.types });
             if (src === 'about:blank') return;
             var z = Math.max(25, Math.min(100, parseInt(e.zoom, 10) || 100)) / 100;
             var fr = document.createElement('iframe');
