@@ -232,7 +232,7 @@
 
     function srcOf(s) {
       var shop = s.shop === 'Lexington' ? 'Lexington' : 'Frankfort';
-      if (s.type === 'map') return 'map?loc=' + shop + '#key=' + key;
+      if (s.type === 'map') return 'map' + (s.shop === 'All' ? '' : '?loc=' + shop) + '#key=' + key;   // All = whole fleet (no loc)
       if (s.type === 'fleet') return 'fleet?location=' + shop + '&auto=1';
       if (s.type === 'bays') return 'bays?loc=' + shop + '#key=' + key;
       if (s.type === 'radar') {
