@@ -226,6 +226,11 @@
       if (s.type === 'map') return 'map?loc=' + shop + '#key=' + key;
       if (s.type === 'fleet') return 'fleet?location=' + shop + '&auto=1';
       if (s.type === 'bays') return 'bays?loc=' + shop + '#key=' + key;
+      if (s.type === 'radar') {
+        // RainViewer plays the radar loop by itself (oAP=1); same address as the app's _htvRadarSrc
+        return 'https://www.rainviewer.com/map.html?loc=' + (parseFloat(s.lat) || 38.2009) + ',' + (parseFloat(s.lon) || -84.8733) + ',' + (parseInt(s.wzoom, 10) || 8) +
+               '&oFa=0&oC=0&oU=0&oCS=1&oF=0&oAP=1&c=3&o=83&lm=1&layer=radar&sm=1&sn=1';
+      }
       if (s.type === 'windy') {
         // same address as the app's _htvWindySrc
         var lat = parseFloat(s.lat) || 38.2009, lon = parseFloat(s.lon) || -84.8733, ov = s.layer || 'radar';
