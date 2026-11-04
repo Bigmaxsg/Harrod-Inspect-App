@@ -126,7 +126,13 @@
     if (!t.loc) return shop === 'Frankfort';
     return t.loc.toLowerCase().indexOf(shop.toLowerCase()) === 0;
   }
-  function shown() { return trucks.filter(function (t) { return inShop(t) && (loc === 'All' || t.loc === loc); }); }
+  // ?show=frankfort-mixer,lexington-all... (Harrod TV): any mix of shop x kind. A truck with no location counts as
+  // Frankfort (as inShop). Kinds from the type: mixer / dump / tractor (+ tanker) / other (pickups, not in the app).
+  var SHOW = ((location.search.match(/[?&]show=([^&#]*)/) || [])[1] || '').split(',').map(function (x) { return decodeURIComponent(x).trim().toLowerCase(); }).filter(function (x) { return x; });
+  function kindOf(t) { var ty = String(t.type || ''); return /mixer/i.test(ty) ? 'mixer' : /dump/i.test(ty) ? 'dump' : /tractor|tanker/i.test(ty) ? 'tractor' : 'other'; }
+  function shopOf(t) { return t.loc && /^lexington/i.test(t.loc) ? 'lexington' : 'frankfort'; }
+  function inShow(t) { var s = shopOf(t); return SHOW.indexOf(s + '-' + kindOf(t)) >= 0 || SHOW.indexOf(s + '-all') >= 0; }
+  function shown() { return trucks.filter(function (t) { return (SHOW.length ? inShow(t) : inShop(t)) && (loc === 'All' || t.loc === loc); }); }
 
   function ago(iso) {
     if (!iso) return 'unknown';
@@ -165,7 +171,7 @@
     trucks.forEach(function (t) { if (t.loc) names[t.loc] = true; });
     var all = ['All'].concat(Object.keys(names).sort());
     box.innerHTML = '';
-    if (shop || all.length < 3) return;
+    if (shop || SHOW.length || all.length < 3) return;
     all.forEach(function (name) {
       var b = document.createElement('button');
       b.type = 'button'; b.textContent = name; b.className = name === loc ? 'on' : '';

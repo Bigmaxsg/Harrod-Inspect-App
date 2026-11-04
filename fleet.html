@@ -432,6 +432,23 @@
   var _params      = new URLSearchParams(window.location.search);
   var _lockedLoc   = (_params.get('location') || '').trim();
   var _lockedType  = (_params.get('type')     || '').trim();
+  // ?show=frankfort-mixer,lexington-dump... (Harrod TV): one screen with any mix of shop x type. Uses the locked
+  // single-pane layout (no tabs, no type buttons); the pane's trucks come from _showMatch instead of its location.
+  var _SHOW_TYPE = { mixer: 'concrete mixer', dump: 'dump truck', tractor: 'tractor', tanker: 'tanker' };
+  var _SHOW = (_params.get('show') || '').split(',').map(function(x) { return x.trim().toLowerCase(); }).filter(function(x) { return /^(frankfort|lexington)-(mixer|dump|tractor|tanker|all)$/.test(x); });
+  if (_SHOW.length) { _lockedLoc = 'Frankfort'; _lockedType = '*'; }
+  function _showMatch(t) {
+    var s = String(activeLoc(t) || '').toLowerCase(), ty = String(t.type || '').trim().toLowerCase();
+    return _SHOW.some(function(x) { var p = x.split('-'); return p[0] === s && (p[1] === 'all' || _SHOW_TYPE[p[1]] === ty); });
+  }
+  function _showTitle() {
+    var by = {}, NM = { mixer: 'Mixers', dump: 'Dump Trucks', tractor: 'Tractors', tanker: 'Tankers' };
+    _SHOW.forEach(function(x) { var p = x.split('-'); (by[p[0]] = by[p[0]] || []).push(p[1]); });
+    return Object.keys(by).map(function(s) {
+      var k = by[s], name = s.charAt(0).toUpperCase() + s.slice(1);
+      return k.indexOf('all') >= 0 || k.length >= 4 ? name : name + ' ' + k.map(function(x) { return NM[x]; }).join(' & ');
+    }).join(' + ');
+  }
   var _AUTO_SECTIONS = _params.get('auto') === '1';
   // ── Appearance Settings ─────────────────────────────────────────────────
   var SP_DEFAULTS = {
@@ -687,7 +704,7 @@
       var titleParts = [_lockedLoc];
       if (lockedTypes.length === 1) titleParts.push(lockedTypes[0] + 's');
       else if (lockedTypes.length > 1) titleParts.push(lockedTypes.map(function(s){return s+'s';}).join(' & '));
-      document.querySelector('#top-bar h1 span').textContent = titleParts.join(' — ');
+      document.querySelector('#top-bar h1 span').textContent = _SHOW.length ? _showTitle() : titleParts.join(' — ');
     }
     loadFleetData();
   });
@@ -821,9 +838,9 @@
     if (!pane) return;
     var inner = pane.querySelector('.pane-inner');
     if (!inner) return;
-    var af = _typeFilters[loc] || '';
+    var af = _SHOW.length ? '' : (_typeFilters[loc] || '');
     var afTypes = af ? af.split(',').map(function(s){return s.trim().toLowerCase();}) : [];
-    var lt = _allTrucks.filter(function(t) { return activeLoc(t) === loc; });
+    var lt = _allTrucks.filter(function(t) { return _SHOW.length ? _showMatch(t) : activeLoc(t) === loc; });
     var filtered = afTypes.length === 0 ? lt : lt.filter(function(t) {
       return afTypes.indexOf((t.type || '').trim().toLowerCase()) !== -1;
     });
