@@ -225,6 +225,12 @@
       if (s.type === 'map') return 'map?loc=' + shop + '#key=' + key;
       if (s.type === 'fleet') return 'fleet?location=' + shop + '&auto=1';
       if (s.type === 'bays') return 'bays?loc=' + shop + '#key=' + key;
+      if (s.type === 'windy') {
+        // same address as the app's _htvWindySrc
+        var lat = parseFloat(s.lat) || 38.2009, lon = parseFloat(s.lon) || -84.8733, ov = s.layer || 'radar';
+        return 'https://embed.windy.com/embed2.html?lat=' + lat + '&lon=' + lon + '&detailLat=' + lat + '&detailLon=' + lon + '&zoom=' + (parseInt(s.wzoom, 10) || 8) +
+               '&level=surface&overlay=' + encodeURIComponent(ov) + '&product=' + (ov === 'radar' ? 'radar' : 'ecmwf') + '&menu=&message=true&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=mph&metricTemp=%C2%B0F&radarRange=-1';
+      }
       return s.url || 'about:blank';
     }
     function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -292,7 +298,7 @@
             wf.src = widgetSrc(e);
             b.appendChild(wf);
           } else {
-            var src = srcOf({ type: e.kind, shop: e.shop, url: e.url });
+            var src = srcOf({ type: e.kind, shop: e.shop, url: e.url, lat: e.lat, lon: e.lon, wzoom: e.wzoom, layer: e.layer });
             if (src === 'about:blank') return;
             var z = Math.max(25, Math.min(100, parseInt(e.zoom, 10) || 100)) / 100;
             var fr = document.createElement('iframe');
