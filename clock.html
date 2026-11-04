@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Clock</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    /* Harrod TV clock item (Session 138). The page fills whatever box it is put in on a layout: every size is in
+       vw / vh of THIS page, so a bigger box = bigger numbers. Transparent unless a panel color is given. */
+    html, body { height: 100%; margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; }
+    #w { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; border-radius: 1.5vmin; }
+    #t { font-weight: 300; line-height: 1; white-space: nowrap; font-variant-numeric: tabular-nums; }
+    #d { margin-top: 0.15em; line-height: 1; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div id="w"><div id="t"></div><div id="d"></div></div>
+  <script>
+  // ?tz=America/New_York (blank = this TV's own clock)  &h12=1|0  &sec=1|0  &date=1|0  &color=ffffff  &panel=0d47a1 (blank = see-through)
+  var q = new URLSearchParams(location.search);
+  function hex(v, d) { return /^[0-9a-f]{6}$/i.test(v || '') ? '#' + v : d; }
+  var tz = q.get('tz') || undefined, h12 = q.get('h12') !== '0', sec = q.get('sec') !== '0', showDate = q.get('date') !== '0';
+  try { new Intl.DateTimeFormat('en-US', { timeZone: tz }); } catch (e) { tz = undefined; }   // a bad zone = the TV's own
+  var w = document.getElementById('w'), t = document.getElementById('t'), d = document.getElementById('d');
+  w.style.color = hex(q.get('color'), '#ffffff');
+  if (q.get('panel')) w.style.background = hex(q.get('panel'), 'transparent');
+  else w.style.textShadow = '0 0.03em 0.1em rgba(0,0,0,0.7)';
+  if (!showDate) d.style.display = 'none';
+  var tf = new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', minute: '2-digit', second: sec ? '2-digit' : undefined, hour12: h12 });
+  var df = new Intl.DateTimeFormat('en-US', { timeZone: tz, month: '2-digit', day: '2-digit', year: 'numeric' });
+  function size() {
+    // the widest the time can be: about 0.6 em per character
+    var chars = (sec ? 8 : 5) + (h12 ? 3 : 0);
+    var ts = Math.min(innerWidth * 0.92 / (chars * 0.58), innerHeight * (showDate ? 0.55 : 0.8));
+    t.style.fontSize = ts + 'px';
+    d.style.fontSize = Math.min(ts * 0.45, innerWidth * 0.92 / 6) + 'px';
+  }
+  function tick() {
+    var now = new Date();
+    t.textContent = tf.format(now).replace(/\s?(AM|PM)$/, function (m) { return h12 ? ' ' + m.trim() : ''; });
+    d.textContent = df.format(now);
+  }
+  size(); tick();
+  addEventListener('resize', size);
+  setInterval(tick, 1000);
+  </script>
+</body>
+</html>

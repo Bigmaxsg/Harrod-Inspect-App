@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Weather</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <style>
+    /* Harrod TV weather item (Session 138): now + the next days, sized to whatever box it is put in on a layout.
+       Data: Open-Meteo (free, no account, no key), asked by THIS page every 15 minutes -- never the app. */
+    html, body { height: 100%; margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; }
+    #w { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 1.2vh; }
+    .now { flex: 1.7 1 0; display: flex; align-items: center; justify-content: center; gap: 4%; min-height: 0; border-radius: 1.2vmin; padding: 0 3%; }
+    .now .ic { height: 80%; aspect-ratio: 1; flex: 0 0 auto; }
+    .now .tx { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
+    .now .pl { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .now .tp { font-weight: 300; line-height: 1; }
+    .now .ds { opacity: 0.9; white-space: nowrap; }
+    .day { flex: 1 1 0; display: grid; grid-template-columns: 1.4fr 0.8fr 1.2fr; align-items: center; min-height: 0; border-radius: 1.2vmin; padding: 0 3%; }
+    .day .nm { font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .day .ic { height: 78%; aspect-ratio: 1; justify-self: center; }
+    .day .hl { text-align: right; line-height: 1.05; }
+    .day .hl b { font-weight: 700; }
+    .day .hl small { display: block; text-transform: uppercase; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    svg { width: 100%; height: 100%; display: block; }
+    #msg { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 5vmin; }
+  </style>
+</head>
+<body>
+  <div id="w"></div>
+  <script>
+  // ?lat=38.2&lon=-84.87&name=Frankfort%2C%20Kentucky  &days=6 (1-7)  &unit=F|C  &color=ffffff  &panel=8c8c8c (blank = see-through)
+  var q = new URLSearchParams(location.search);
+  function hex(v, d) { return /^[0-9a-f]{6}$/i.test(v || '') ? '#' + v : d; }
+  var lat = parseFloat(q.get('lat')), lon = parseFloat(q.get('lon'));
+  if (isNaN(lat) || isNaN(lon)) { lat = 38.2009; lon = -84.8733; }   // Frankfort, Kentucky
+  var name = q.get('name') || 'Frankfort, Kentucky';
+  var days = Math.max(1, Math.min(7, parseInt(q.get('days'), 10) || 6));
+  var unitC = q.get('unit') === 'C';
+  var color = hex(q.get('color'), '#ffffff'), panel = q.get('panel') ? hex(q.get('panel'), '') : '';
+  var w = document.getElementById('w');
+  w.style.color = color;
+  if (!panel) w.style.textShadow = '0 0.04em 0.12em rgba(0,0,0,0.75)';
+
+  // WMO weather codes (Open-Meteo) -> words + icon
+  function kind(c) {
+    if (c === 0) return ['Sky is clear', 'sun'];
+    if (c === 1 || c === 2) return ['Partly cloudy', 'part'];
+    if (c === 3) return ['Cloudy', 'cloud'];
+    if (c === 45 || c === 48) return ['Fog', 'fog'];
+    if (c >= 51 && c <= 57) return ['Drizzle', 'rain'];
+    if (c === 61 || c === 80) return ['Light rain', 'rain'];
+    if (c === 63 || c === 81) return ['Rain', 'rain'];
+    if (c === 65 || c === 82) return ['Heavy rain', 'rain'];
+    if (c === 66 || c === 67) return ['Freezing rain', 'sleet'];
+    if (c === 71 || c === 85) return ['Light snow', 'snow'];
+    if (c === 73) return ['Snow', 'snow'];
+    if (c === 75 || c === 86) return ['Heavy snow', 'snow'];
+    if (c === 77) return ['Snow grains', 'snow'];
+    if (c >= 95) return ['Thunderstorms', 'storm'];
+    return ['', 'cloud'];
+  }
+  // simple line icons (an emoji font may be missing on the TV computer)
+  var S = 'fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"';
+  var CLOUD = '<path ' + S + ' d="M20 44h26a10 10 0 0 0 0-20 14 14 0 0 0-27-2 9 9 0 0 0 1 22z"/>';
+  var ICON = {
+    sun: '<circle ' + S + ' cx="32" cy="32" r="11"/>' + [0, 45, 90, 135, 180, 225, 270, 315].map(function (a) {
+      var r = a * Math.PI / 180; return '<line ' + S + ' x1="' + (32 + 17 * Math.cos(r)) + '" y1="' + (32 + 17 * Math.sin(r)) + '" x2="' + (32 + 25 * Math.cos(r)) + '" y2="' + (32 + 25 * Math.sin(r)) + '"/>';
+    }).join(''),
+    part: '<circle ' + S + ' cx="24" cy="22" r="8"/><path ' + S + ' d="M24 8v3M12 12l2 2M8 22h3M36 12l-2 2"/><path ' + S + ' d="M24 48h22a9 9 0 0 0 0-18 12 12 0 0 0-23-2 8 8 0 0 0 1 20z"/>',
+    cloud: CLOUD,
+    fog: CLOUD + '<path ' + S + ' d="M14 52h36M18 58h28"/>',
+    rain: CLOUD.replace('M20 44', 'M20 38').replace('0-20', '0-20') + '<path ' + S + ' d="M22 50l-3 7M32 50l-3 7M42 50l-3 7"/>',
+    sleet: CLOUD + '<path ' + S + ' d="M22 50l-3 7M42 50l-3 7"/><circle cx="31" cy="54" r="2" fill="currentColor"/>',
+    snow: CLOUD + '<path ' + S + ' d="M22 50v8M18 54h8M40 50v8M36 54h8"/><circle cx="31" cy="56" r="1.8" fill="currentColor"/>',
+    storm: CLOUD + '<path ' + S + ' d="M34 46l-6 9h7l-5 8"/>'
+  };
+  function icon(k) { return '<svg viewBox="0 0 64 64">' + (ICON[k] || CLOUD) + '</svg>'; }
+  function esc(t) { return String(t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  var last = null;
+  function draw() {
+    if (!last) return;
+    var r = last, rows = days + 1.7, fs = Math.min(innerHeight / rows * 0.34, innerWidth * 0.06);
+    var bg = panel ? ' style="background:' + panel + '"' : '';
+    var k0 = kind(r.current.weather_code), u = '°';
+    var h = '<div class="now"' + bg + '><div class="ic">' + icon(k0[1]) + '</div><div class="tx">' +
+            '<div class="pl" style="font-size:' + fs * 0.9 + 'px">' + esc(name) + '</div>' +
+            '<div class="tp" style="font-size:' + fs * 2.6 + 'px">' + Math.round(r.current.temperature_2m) + u + (unitC ? 'C' : 'F') + '</div>' +
+            '<div class="ds" style="font-size:' + fs * 0.8 + 'px">' + esc(k0[0]) + '</div></div></div>';
+    for (var i = 0; i < days && i < r.daily.time.length; i++) {
+      var kd = kind(r.daily.weather_code[i]);
+      var dt = new Date(r.daily.time[i] + 'T12:00:00');
+      var nm = i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : dt.toLocaleDateString('en-US', { weekday: 'long' }) + ' ' + dt.getDate();
+      h += '<div class="day"' + bg + '><div class="nm" style="font-size:' + fs + 'px">' + esc(nm) + '</div><div class="ic">' + icon(kd[1]) + '</div>' +
+           '<div class="hl"><b style="font-size:' + fs * 1.5 + 'px">' + Math.round(r.daily.temperature_2m_max[i]) + u + '</b>' +
+           '<span style="font-size:' + fs + 'px"> / ' + Math.round(r.daily.temperature_2m_min[i]) + u + '</span>' +
+           '<small style="font-size:' + fs * 0.6 + 'px">' + esc(kd[0]) + '</small></div></div>';
+    }
+    w.innerHTML = h;
+  }
+  function pull() {
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon +
+              '&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min' +
+              '&temperature_unit=' + (unitC ? 'celsius' : 'fahrenheit') + '&timezone=auto&forecast_days=' + Math.max(days, 2);
+    fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(function (r) {
+        last = r;
+        try { localStorage.setItem('wx-' + lat + ',' + lon, JSON.stringify(r)); } catch (e) {}
+        draw();
+      })
+      .catch(function () { if (!last) w.innerHTML = '<div id="msg">Weather is not available right now</div>'; });
+  }
+  try { last = JSON.parse(localStorage.getItem('wx-' + lat + ',' + lon) || 'null'); } catch (e) {}
+  draw();
+  pull();
+  setInterval(pull, 15 * 60 * 1000);
+  addEventListener('resize', draw);
+  </script>
+</body>
+</html>
