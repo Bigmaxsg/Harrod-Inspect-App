@@ -10,16 +10,18 @@
        Data: Open-Meteo (free, no account, no key), asked by THIS page every 15 minutes -- never the app. */
     html, body { height: 100%; margin: 0; background: transparent; overflow: hidden; font-family: 'Segoe UI', Arial, sans-serif; }
     #w { position: absolute; inset: 0; display: flex; flex-direction: column; gap: 1.2vh; }
-    .now { flex: 1.7 1 0; display: flex; align-items: center; justify-content: center; gap: 4%; min-height: 0; border-radius: 1.2vmin; padding: 0 3%; }
-    .now .ic { height: 80%; aspect-ratio: 1; flex: 0 0 auto; }
+    .now { flex: 1.7 1 0; display: flex; align-items: center; justify-content: center; gap: 4%; min-height: 0; overflow: hidden; line-height: 1.1; border-radius: 1.2vmin; padding: 0 3%; }
+    .now .ic { height: 70%; aspect-ratio: 1; flex: 0 0 auto; }
     .now .tx { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; }
     .now .pl { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
     .now .tp { font-weight: 300; line-height: 1; }
     .now .ds { opacity: 0.9; white-space: nowrap; }
-    .day { flex: 1 1 0; display: grid; grid-template-columns: 1.4fr 0.8fr 1.2fr; align-items: center; min-height: 0; border-radius: 1.2vmin; padding: 0 3%; }
+    /* each row holds its own text (Max: rows spilled into the next one): sizes come from the row height in draw() */
+    .day { flex: 1 1 0; display: grid; grid-template-columns: minmax(0, 1.5fr) auto minmax(0, 1.2fr); grid-template-rows: 100%; column-gap: 4%; align-items: center; min-height: 0; overflow: hidden; border-radius: 1.2vmin; padding: 0 3%; }
     .day .nm { font-weight: 800; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .day .ic { height: 78%; aspect-ratio: 1; justify-self: center; }
-    .day .hl { text-align: right; line-height: 1.05; }
+    .day .ic { height: 68%; aspect-ratio: 1; justify-self: center; }
+    .day .nm { line-height: 1.1; }
+    .day .hl { text-align: right; line-height: 1.05; white-space: nowrap; }
     .day .hl b { font-weight: 700; }
     .day .hl small { display: block; text-transform: uppercase; opacity: 0.85; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     svg { width: 100%; height: 100%; display: block; }
@@ -81,7 +83,9 @@
   var last = null;
   function draw() {
     if (!last) return;
-    var r = last, rows = days + 1.7, fs = Math.min(innerHeight / rows * 0.34, innerWidth * 0.06);
+    // one row = (height - gaps) / (days + 1.7 for the bigger top row); the tallest thing in a day row is the high
+    // (1.5 em) over its words (0.6 em) = about 2.3 em, so 0.27 of the row leaves room above and below
+    var r = last, gap = innerHeight * 0.012, rowH = (innerHeight - gap * days) / (days + 1.7), fs = Math.min(rowH * 0.27, innerWidth * 0.05);
     var bg = panel ? ' style="background:' + panel + '"' : '';
     var k0 = kind(r.current.weather_code), u = '°';
     var h = '<div class="now"' + bg + '><div class="ic">' + icon(k0[1]) + '</div><div class="tx">' +
