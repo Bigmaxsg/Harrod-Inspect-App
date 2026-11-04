@@ -113,6 +113,15 @@
     try { cfg = JSON.parse(localStorage.getItem('tv-' + display) || 'null'); } catch (e) {}
     pullList();
     setInterval(pullList, LIST_EVERY_MS);
+    // Max: Harrod TV in the app shows which TVs are on. This TV checks in every 5 minutes (one tiny call to the app);
+    // a new id each start, because a read-only Pi forgets everything when it restarts.
+    var GAS_URL = 'https://script.google.com/macros/s/AKfycbyXrdf-GgefxsQSI6cBwlXZtQj54Rgv9ySNjBQ9Gh73ZnjMlQWnUtiGW2fQ-OxwG4-J8Q/exec';
+    var sess = Math.random().toString(36).slice(2, 12).replace(/[^a-z0-9]/g, '') || String(Date.now());
+    function ping() {
+      fetch(GAS_URL + '?action=tvPing&key=' + encodeURIComponent(key) + '&d=' + encodeURIComponent(display) + '&s=' + sess).catch(function () {});
+    }
+    ping();
+    setInterval(ping, 5 * 60 * 1000);
     setInterval(tick, 1000);
     if (cfg) start();
 
