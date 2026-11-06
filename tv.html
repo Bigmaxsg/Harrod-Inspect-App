@@ -47,9 +47,19 @@
   }
   setTimeout(function () { location.reload(); }, RELOAD_HOURS * 3600 * 1000);
 
+  // 4K TVs: how much bigger than 1080p this screen is (1 on a 1080p TV). Fleet Live View / Bay View frames are drawn
+  // at 1080 tall and scaled up by this, so their fixed-size headings match a 1080p TV (Max, 4K vs 1080p).
+  var UI_K = window.innerHeight > 1200 ? Math.min(3, window.innerHeight / 1080) : 1;
+  function fitFrame(f, k) {
+    if (!(k > 1)) return;
+    f.style.left = '0'; f.style.top = '0'; f.style.right = 'auto'; f.style.bottom = 'auto';
+    f.style.width = (100 / k) + '%'; f.style.height = (100 / k) + '%';
+    f.style.transform = 'scale(' + k + ')'; f.style.transformOrigin = '0 0';
+  }
   function makeCount() {
     var c = document.createElement('div');
     c.id = 'count';
+    if (UI_K > 1) { c.style.transform = 'scale(' + UI_K + ')'; c.style.transformOrigin = 'top right'; }
     document.body.appendChild(c);
     return c;
   }
@@ -75,11 +85,12 @@
     var SECONDS = 45;
     var shop = /[?&]loc=lexington/i.test(location.search) ? 'Lexington' : 'Frankfort';
     var SCREENS = ['map?loc=' + shop + '#key=' + key, 'fleet?location=' + shop + '&auto=1', 'bays?loc=' + shop + '#key=' + key];
-    var frames = SCREENS.map(function (src) {
+    var frames = SCREENS.map(function (src, i) {
       var f = document.createElement('iframe');
       f.src = src;
       document.body.appendChild(f);
       makeRoom(f);
+      if (i > 0) fitFrame(f, UI_K);   // Fleet Live View, Bay View
       return f;
     });
     var count = makeCount(), at = 0, left = SECONDS;
@@ -356,6 +367,7 @@
             var src = srcOf({ type: e.kind, shop: e.shop, url: e.url, lat: e.lat, lon: e.lon, wzoom: e.wzoom, layer: e.layer, tsize: e.tsize, types: e.types, show: e.show });
             if (src === 'about:blank') return;
             var z = Math.max(25, Math.min(100, parseInt(e.zoom, 10) || 100)) / 100;
+            if (e.kind === 'fleet' || e.kind === 'bays') z = z * UI_K;   // 4K: as big as on a 1080p TV
             var fr = document.createElement('iframe');
             fr.setAttribute('allow', 'autoplay; fullscreen');
             fr.style.cssText = 'position:absolute;left:0;top:0;border:0;background:#fff;visibility:inherit;width:' + (100 / z) + '%;height:' + (100 / z) + '%;transform:scale(' + z + ');transform-origin:0 0;';
@@ -379,6 +391,7 @@
         f.style.inset = '0'; f.style.width = '100%'; f.style.height = '100%';
         f.setAttribute('allow', 'autoplay; fullscreen');
         if (usesApp(s)) makeRoom(f);
+        if (s.type === 'fleet' || s.type === 'bays') fitFrame(f, UI_K);   // 4K: as big as on a 1080p TV
         f.src = srcOf(s);
         holder.appendChild(f);
       }
