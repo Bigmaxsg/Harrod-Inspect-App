@@ -47,8 +47,9 @@
   }
   setTimeout(function () { location.reload(); }, RELOAD_HOURS * 3600 * 1000);
 
-  // 4K TVs: how much bigger than 1080p this screen is (1 on a 1080p TV). Fleet Live View / Bay View frames are drawn
-  // at 1080 tall and scaled up by this, so their fixed-size headings match a 1080p TV (Max, 4K vs 1080p).
+  // 4K TVs: how much bigger than 1080p this screen is (1 on a 1080p TV). EVERY frame (map, Fleet Live View, Bay View,
+  // web pages, Windy, radar, clock / weather items) is drawn at 1080 tall and scaled up by this, so it looks the same
+  // as on a 1080p TV (Max: "let's just do any harrod tv at 1080").
   var UI_K = window.innerHeight > 1200 ? Math.min(3, window.innerHeight / 1080) : 1;
   function fitFrame(f, k) {
     if (!(k > 1)) return;
@@ -90,7 +91,7 @@
       f.src = src;
       document.body.appendChild(f);
       makeRoom(f);
-      if (i > 0) fitFrame(f, UI_K);   // Fleet Live View, Bay View
+      fitFrame(f, UI_K);   // 4K: drawn at 1080
       return f;
     });
     var count = makeCount(), at = 0, left = SECONDS;
@@ -362,12 +363,13 @@
             wf.setAttribute('allowtransparency', 'true');
             wf.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent;visibility:inherit;';
             wf.src = widgetSrc(e);
+            fitFrame(wf, UI_K);   // 4K: drawn at 1080
             b.appendChild(wf);
           } else {
             var src = srcOf({ type: e.kind, shop: e.shop, url: e.url, lat: e.lat, lon: e.lon, wzoom: e.wzoom, layer: e.layer, tsize: e.tsize, types: e.types, show: e.show });
             if (src === 'about:blank') return;
             var z = Math.max(25, Math.min(100, parseInt(e.zoom, 10) || 100)) / 100;
-            if (e.kind === 'fleet' || e.kind === 'bays') z = z * UI_K;   // 4K: as big as on a 1080p TV
+            z = z * UI_K;   // 4K: drawn at 1080
             var fr = document.createElement('iframe');
             fr.setAttribute('allow', 'autoplay; fullscreen');
             fr.style.cssText = 'position:absolute;left:0;top:0;border:0;background:#fff;visibility:inherit;width:' + (100 / z) + '%;height:' + (100 / z) + '%;transform:scale(' + z + ');transform-origin:0 0;';
@@ -391,7 +393,7 @@
         f.style.inset = '0'; f.style.width = '100%'; f.style.height = '100%';
         f.setAttribute('allow', 'autoplay; fullscreen');
         if (usesApp(s)) makeRoom(f);
-        if (s.type === 'fleet' || s.type === 'bays') fitFrame(f, UI_K);   // 4K: as big as on a 1080p TV
+        fitFrame(f, UI_K);   // 4K: drawn at 1080
         f.src = srcOf(s);
         holder.appendChild(f);
       }
